@@ -1,0 +1,12 @@
+{
+  "id": "test-course-import",
+  "title": "Test Course Import",
+  "description": "A test course imported from ZIP file",
+  "level": "Intermediate",
+  "author": "Test Author",
+  "tags": [
+    "test",
+    "import",
+    "zip"
+  ]
+}

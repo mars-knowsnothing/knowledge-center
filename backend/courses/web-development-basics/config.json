@@ -1,0 +1,9 @@
+{
+  "id": "web-development-basics",
+  "title": "Web Development Basics",
+  "description": "Learn the fundamentals of HTML, CSS, and JavaScript",
+  "level": "Beginner",
+  "duration": "2 hours",
+  "author": "Training Team",
+  "tags": ["html", "css", "javascript", "web-development"]
+}

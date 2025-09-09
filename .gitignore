@@ -1,0 +1,67 @@
+# Logs and Process Files
+*.log
+*.pid
+backend.log
+frontend.log
+backend.pid
+frontend.pid
+
+# Dependencies
+node_modules/
+.venv/
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
+# Build outputs
+.next/
+build/
+dist/
+*.egg-info/
+
+# Environment files
+.env
+.env.local
+.env.production
+.env.development
+
+# IDE files
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS files
+.DS_Store
+Thumbs.db
+*.tmp
+
+# Python virtual environments
+venv/
+env/
+
+# JavaScript/Node.js
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Next.js
+.next/
+out/
+
+# Temporary files
+temp/
+tmp/
+
+# Development databases
+*.db
+*.sqlite
+*.sqlite3
+
+# Coverage reports
+coverage/
+.nyc_output/
+
+# ESLint cache
+.eslintcache

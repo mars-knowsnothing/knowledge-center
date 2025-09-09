@@ -1,0 +1,10 @@
+{
+  "id": "theme-demo",
+  "title": "Theme & Layout Demo",
+  "description": "Demonstration of different themes and layouts available in the presentation system",
+  "author": "System Demo",
+  "level": "Beginner",
+  "tags": ["demo", "themes", "layouts"],
+  "created_at": "2024-01-15T10:00:00Z",
+  "updated_at": "2024-01-15T10:00:00Z"
+}

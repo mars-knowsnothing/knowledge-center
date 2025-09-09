@@ -1,0 +1,40 @@
+{
+  "id": "slidev-enhanced-template",
+  "title": "Slidev-Enhanced Training Course",
+  "description": "A modern presentation framework with interactive features including math rendering, Mermaid diagrams, enhanced code highlighting, and professional slide layouts. Perfect for technical training courses.",
+  "level": "Intermediate",
+  "duration": "3 hours",
+  "author": "Training System Team",
+  "version": "2.0.0",
+  "features": [
+    "KaTeX Math Rendering",
+    "Mermaid Diagrams", 
+    "Syntax Highlighting",
+    "Multiple Slide Layouts",
+    "Interactive Elements",
+    "Professional Themes"
+  ],
+  "tags": [
+    "slidev",
+    "presentations",
+    "interactive",
+    "math",
+    "diagrams",
+    "code",
+    "training",
+    "modern",
+    "template"
+  ],
+  "requirements": [
+    "Modern web browser",
+    "Basic understanding of presentations",
+    "Familiarity with markdown syntax"
+  ],
+  "learning_outcomes": [
+    "Create interactive presentations with math formulas",
+    "Design visual diagrams using Mermaid syntax",
+    "Implement advanced code examples with highlighting",
+    "Use professional slide layouts and themes",
+    "Build engaging technical training content"
+  ]
+}
