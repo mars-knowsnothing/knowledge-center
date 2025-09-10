@@ -2,9 +2,11 @@
 
 import { useState, useEffect, useRef, useCallback } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
-import MarkdownIt from 'markdown-it'
+import fm from 'front-matter'
+import yaml from 'js-yaml'
 import Layout from "@/components/Layout"
 import { api, Course, ApiError, SlidesUpdate, Slide } from '@/lib/api'
+import SlidePreview from './SlidePreview'
 import { 
   ArrowLeftIcon,
   ChevronLeftIcon,
@@ -30,36 +32,44 @@ export default function CourseEditor({ courseId }: CourseEditorProps) {
   const [success, setSuccess] = useState<string | null>(null)
   
   const [slidesContent, setSlidesContent] = useState('')
+  const [previewSlides, setPreviewSlides] = useState<Slide[]>([])
   const [currentSlideIndex, setCurrentSlideIndex] = useState(0)
   const [autoSync, setAutoSync] = useState(true)
 
-  // Initialize markdown renderer
-  const md = new MarkdownIt({
-    html: true,
-    linkify: true,
-    typographer: true
-  })
-
   // Parse slides content for preview
   const parseSlides = useCallback((content: string): Slide[] => {
-    const slides: Slide[] = []
-    const slideParts = content.split(/---\s*\n/g)
+    if (!content) return []
+
+    const slideParts = content.split(/\n---\n/g)
     
-    slideParts.forEach((part, index) => {
-      const trimmed = part.trim()
-      if (trimmed) {
-        slides.push({
+    return slideParts.map((part, index) => {
+      try {
+        const parsed = fm(part)
+        return {
           id: `slide-${index + 1}`,
-          content: trimmed,
-          html: '' // Will be rendered by the preview component
-        })
+          content: parsed.body,
+          html: '', // This will be handled by the theme component
+          metadata: parsed.attributes as Record<string, any>,
+        }
+      } catch (error) {
+        console.error("Error parsing front-matter:", error)
+        return {
+          id: `slide-${index + 1}`,
+          content: part,
+          html: '',
+          metadata: { error: "Invalid front-matter" }
+        }
       }
     })
-    
-    return slides
   }, [])
 
-  const previewSlides = parseSlides(slidesContent)
+  useEffect(() => {
+    const slides = parseSlides(slidesContent)
+    setPreviewSlides(slides)
+    if (currentSlideIndex >= slides.length) {
+      setCurrentSlideIndex(Math.max(0, slides.length - 1))
+    }
+  }, [slidesContent, parseSlides, currentSlideIndex])
 
   const getSlidePositions = useCallback((content: string) => {
     const positions: { start: number; end: number; line: number }[] = []
@@ -105,9 +115,13 @@ export default function CourseEditor({ courseId }: CourseEditorProps) {
       ])
 
       setCourse(courseData)
+      setPreviewSlides(slidesData.slides)
 
-      // Get raw markdown content by reconstructing it from slides
-      const rawContent = slidesData.slides.map(slide => slide.content).join('\n\n---\n\n')
+      // Reconstruct raw markdown content for the editor
+      const rawContent = slidesData.slides.map(slide => {
+        const frontmatter = slide.metadata ? yaml.dump(slide.metadata) : ''
+        return frontmatter ? `---\n${frontmatter}---\n${slide.content}` : slide.content
+      }).join('\n\n---\n\n')
       setSlidesContent(rawContent)
 
     } catch (err) {
@@ -333,22 +347,8 @@ export default function CourseEditor({ courseId }: CourseEditorProps) {
               </div>
               
               {/* Preview Content */}
-              <div className="flex-1 p-6 overflow-auto">
-                {previewSlides.length > 0 ? (
-                  <div className="prose prose-lg max-w-none">
-                    <div dangerouslySetInnerHTML={{ 
-                      __html: md.render(previewSlides[currentSlideIndex]?.content || '') 
-                    }} />
-                  </div>
-                ) : (
-                  <div className="flex items-center justify-center h-full text-gray-500">
-                    <div className="text-center">
-                      <DocumentTextIcon className="h-12 w-12 mx-auto mb-4 opacity-50" />
-                      <p>No slides to preview</p>
-                      <p className="text-sm mt-1">Add content below to see preview</p>
-                    </div>
-                  </div>
-                )}
+              <div className="flex-1 overflow-auto bg-gray-100">
+                <SlidePreview slide={previewSlides[currentSlideIndex]} />
               </div>
             </div>
           </div>
