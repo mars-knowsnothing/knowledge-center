@@ -16,6 +16,7 @@ import ThemeSelector from './ThemeSelector'
 interface Slide {
   content: string
   html: string
+  metadata?: Record<string, any>
 }
 
 interface SlideShowProps {
@@ -23,9 +24,11 @@ interface SlideShowProps {
   currentSlide: number
   onSlideChange: (index: number) => void
   className?: string
+  containerClassName?: string
+  isPreview?: boolean
 }
 
-export default function SlideShow({ slides, currentSlide, onSlideChange, className = '' }: SlideShowProps) {
+export default function SlideShow({ slides, currentSlide, onSlideChange, className = '', containerClassName, isPreview = false }: SlideShowProps) {
   const [isFullscreen, setIsFullscreen] = useState(false)
   const [isPlaying, setIsPlaying] = useState(false)
   const [currentTheme, setCurrentTheme] = useState('minimal')
@@ -33,6 +36,7 @@ export default function SlideShow({ slides, currentSlide, onSlideChange, classNa
   const [showThemeSelector, setShowThemeSelector] = useState(false)
   const slideRef = useRef<HTMLDivElement>(null)
   const containerRef = useRef<HTMLDivElement>(null)
+  const thumbnailContainerRef = useRef<HTMLDivElement>(null)
 
   // Auto-advance slides when playing
   useEffect(() => {
@@ -113,6 +117,21 @@ export default function SlideShow({ slides, currentSlide, onSlideChange, classNa
     return () => document.removeEventListener('fullscreenchange', handleFullscreenChange)
   }, [])
 
+  // Auto-scroll to current thumbnail
+  useEffect(() => {
+    if (thumbnailContainerRef.current && !isFullscreen) {
+      const container = thumbnailContainerRef.current
+      const thumbnailWidth = 64 + 8 // w-16 + space-x-2
+      const containerWidth = container.clientWidth
+      const scrollPosition = Math.max(0, (currentSlide * thumbnailWidth) - (containerWidth / 2) + (thumbnailWidth / 2))
+      
+      container.scrollTo({
+        left: scrollPosition,
+        behavior: 'smooth'
+      })
+    }
+  }, [currentSlide, isFullscreen])
+
   if (slides.length === 0) {
     return (
       <div className={`flex items-center justify-center h-96 bg-gray-100 rounded-lg ${className}`}>
@@ -122,7 +141,11 @@ export default function SlideShow({ slides, currentSlide, onSlideChange, classNa
   }
 
   const currentSlideData = slides[currentSlide] || slides[0]
-  const ThemeComponent = getTheme(currentTheme).component
+  
+  // Get theme and layout from slide metadata or fall back to component state
+  const slideTheme = currentSlideData?.metadata?.theme || currentTheme
+  const slideLayout = currentSlideData?.metadata?.layout || currentLayout
+  const ThemeComponent = getTheme(slideTheme).component
 
   return (
     <div className={`${className}`}>
@@ -131,7 +154,7 @@ export default function SlideShow({ slides, currentSlide, onSlideChange, classNa
         className={`relative ${
           isFullscreen 
             ? 'fixed inset-0 z-50 bg-black' 
-            : 'w-full aspect-[16/9] rounded-lg overflow-hidden border border-gray-200 shadow-sm'
+            : containerClassName || 'w-full aspect-[16/9] rounded-lg overflow-hidden border border-gray-200 shadow-sm'
         }`}
       >
         {/* Slide Content */}
@@ -139,7 +162,7 @@ export default function SlideShow({ slides, currentSlide, onSlideChange, classNa
           ref={slideRef}
           className="absolute inset-0"
         >
-          <ThemeComponent layout={currentLayout} isFullscreen={isFullscreen}>
+          <ThemeComponent layout={slideLayout} isFullscreen={isFullscreen} isPreview={isPreview}>
             {currentSlideData.content}
           </ThemeComponent>
         </div>
@@ -157,7 +180,7 @@ export default function SlideShow({ slides, currentSlide, onSlideChange, classNa
           )}
 
           {/* Navigation Controls */}
-          <div className="absolute bottom-4 left-1/2 transform -translate-x-1/2 flex items-center space-x-2 pointer-events-auto z-50">
+          <div className={`absolute ${isPreview ? 'bottom-2' : 'bottom-4'} left-1/2 transform -translate-x-1/2 flex items-center space-x-2 pointer-events-auto z-50`}>
             {/* Previous Slide */}
             <button
               onClick={(e) => {
@@ -165,7 +188,7 @@ export default function SlideShow({ slides, currentSlide, onSlideChange, classNa
                 if (currentSlide > 0) onSlideChange(currentSlide - 1)
               }}
               disabled={currentSlide === 0}
-              className={`p-2 rounded-full transition-colors ${
+              className={`${isPreview ? 'p-1' : 'p-2'} rounded-full transition-colors ${
                 currentSlide === 0
                   ? 'opacity-50 cursor-not-allowed'
                   : isFullscreen
@@ -173,7 +196,7 @@ export default function SlideShow({ slides, currentSlide, onSlideChange, classNa
                     : 'hover:bg-white/80 text-gray-700 bg-white/60'
               }`}
             >
-              <ChevronLeftIcon className="h-5 w-5" />
+              <ChevronLeftIcon className={`${isPreview ? 'h-3 w-3' : 'h-5 w-5'}`} />
             </button>
 
             {/* Play/Pause */}
@@ -182,16 +205,16 @@ export default function SlideShow({ slides, currentSlide, onSlideChange, classNa
                 e.stopPropagation()
                 setIsPlaying(!isPlaying)
               }}
-              className={`p-2 rounded-full transition-colors ${
+              className={`${isPreview ? 'p-1' : 'p-2'} rounded-full transition-colors ${
                 isFullscreen
                   ? 'hover:bg-white/20 text-white bg-black/20'
                   : 'hover:bg-white/80 text-gray-700 bg-white/60'
               }`}
             >
               {isPlaying ? (
-                <PauseIcon className="h-5 w-5" />
+                <PauseIcon className={`${isPreview ? 'h-3 w-3' : 'h-5 w-5'}`} />
               ) : (
-                <PlayIcon className="h-5 w-5" />
+                <PlayIcon className={`${isPreview ? 'h-3 w-3' : 'h-5 w-5'}`} />
               )}
             </button>
 
@@ -202,7 +225,7 @@ export default function SlideShow({ slides, currentSlide, onSlideChange, classNa
                 if (currentSlide < slides.length - 1) onSlideChange(currentSlide + 1)
               }}
               disabled={currentSlide === slides.length - 1}
-              className={`p-2 rounded-full transition-colors ${
+              className={`${isPreview ? 'p-1' : 'p-2'} rounded-full transition-colors ${
                 currentSlide === slides.length - 1
                   ? 'opacity-50 cursor-not-allowed'
                   : isFullscreen
@@ -210,31 +233,33 @@ export default function SlideShow({ slides, currentSlide, onSlideChange, classNa
                     : 'hover:bg-white/80 text-gray-700 bg-white/60'
               }`}
             >
-              <ChevronRightIcon className="h-5 w-5" />
+              <ChevronRightIcon className={`${isPreview ? 'h-3 w-3' : 'h-5 w-5'}`} />
             </button>
 
-            {/* Fullscreen Toggle */}
-            <button
-              onClick={(e) => {
-                e.stopPropagation()
-                toggleFullscreen()
-              }}
-              className={`p-2 rounded-full transition-colors ${
-                isFullscreen
-                  ? 'hover:bg-white/20 text-white bg-black/20'
-                  : 'hover:bg-white/80 text-gray-700 bg-white/60'
-              }`}
-            >
-              {isFullscreen ? (
-                <ArrowsPointingInIcon className="h-5 w-5" />
-              ) : (
-                <ArrowsPointingOutIcon className="h-5 w-5" />
-              )}
-            </button>
+            {/* Fullscreen Toggle - Hide in preview mode */}
+            {!isPreview && (
+              <button
+                onClick={(e) => {
+                  e.stopPropagation()
+                  toggleFullscreen()
+                }}
+                className={`${isPreview ? 'p-1' : 'p-2'} rounded-full transition-colors ${
+                  isFullscreen
+                    ? 'hover:bg-white/20 text-white bg-black/20'
+                    : 'hover:bg-white/80 text-gray-700 bg-white/60'
+                }`}
+              >
+                {isFullscreen ? (
+                  <ArrowsPointingInIcon className={`${isPreview ? 'h-3 w-3' : 'h-5 w-5'}`} />
+                ) : (
+                  <ArrowsPointingOutIcon className={`${isPreview ? 'h-3 w-3' : 'h-5 w-5'}`} />
+                )}
+              </button>
+            )}
           </div>
 
           {/* Slide Counter */}
-          <div className={`absolute bottom-4 right-4 text-sm pointer-events-none z-40 px-2 py-1 rounded ${
+          <div className={`absolute ${isPreview ? 'bottom-2 right-1 text-xs px-1 py-0.5' : 'bottom-4 right-4 text-sm px-2 py-1'} pointer-events-none z-40 rounded ${
             isFullscreen 
               ? 'text-white bg-black/20' 
               : 'text-gray-700 bg-white/60'
@@ -258,22 +283,32 @@ export default function SlideShow({ slides, currentSlide, onSlideChange, classNa
 
       {/* Thumbnail Navigation - Outside main container */}
       {!isFullscreen && (
-        <div className="flex justify-center mt-4 space-x-2 overflow-x-auto pb-2">
-          {slides.map((slide, index) => (
-            <button
-              key={index}
-              onClick={() => onSlideChange(index)}
-              className={`flex-shrink-0 w-16 h-12 rounded border-2 text-xs transition-colors ${
-                index === currentSlide
-                  ? 'border-blue-500 bg-blue-50'
-                  : 'border-gray-200 hover:border-gray-300 bg-white'
-              }`}
-            >
-              <div className="w-full h-full bg-gray-100 rounded flex items-center justify-center">
-                {index + 1}
-              </div>
-            </button>
-          ))}
+        <div className="w-full mt-4 px-4">
+          <div 
+            ref={thumbnailContainerRef}
+            className="flex justify-start space-x-2 overflow-x-auto pb-2 px-2 scrollbar-hide"
+            style={{
+              scrollBehavior: 'smooth',
+              scrollbarWidth: 'none',
+              msOverflowStyle: 'none'
+            }}
+          >
+            {slides.map((slide, index) => (
+              <button
+                key={index}
+                onClick={() => onSlideChange(index)}
+                className={`flex-shrink-0 w-16 h-12 rounded-lg border-2 text-sm font-semibold transition-all duration-200 transform hover:scale-105 ${
+                  index === currentSlide
+                    ? 'border-blue-600 bg-blue-600 text-white shadow-lg shadow-blue-200'
+                    : 'border-gray-300 hover:border-blue-400 bg-white hover:bg-blue-50 text-gray-700 hover:text-blue-600 shadow-md'
+                }`}
+              >
+                <div className="w-full h-full rounded flex items-center justify-center">
+                  {index + 1}
+                </div>
+              </button>
+            ))}
+          </div>
         </div>
       )}
       

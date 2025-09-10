@@ -14,15 +14,15 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 find_project_root() {
     local current_dir="$SCRIPT_DIR"
     
-    # If we're already in training-system-v2, use current directory
-    if [[ "$current_dir" == *"training-system-v2" ]] && [ -d "$current_dir/frontend" ] && [ -d "$current_dir/backend" ]; then
+    # If we're already in knowledge-center, use current directory
+    if [[ "$current_dir" == *"knowledge-center" ]] && [ -d "$current_dir/frontend" ] && [ -d "$current_dir/backend" ]; then
         echo "$current_dir"
         return 0
     fi
     
-    # Look for training-system-v2 directory in current location
-    if [ -d "$current_dir/training-system-v2" ] && [ -d "$current_dir/training-system-v2/frontend" ] && [ -d "$current_dir/training-system-v2/backend" ]; then
-        echo "$current_dir/training-system-v2"
+    # Look for knowledge-center directory in current location
+    if [ -d "$current_dir/knowledge-center" ] && [ -d "$current_dir/knowledge-center/frontend" ] && [ -d "$current_dir/knowledge-center/backend" ]; then
+        echo "$current_dir/knowledge-center"
         return 0
     fi
     
@@ -30,8 +30,8 @@ find_project_root() {
     local search_dir="$current_dir"
     for i in {1..5}; do
         search_dir="$(dirname "$search_dir")"
-        if [ -d "$search_dir/training-system-v2" ] && [ -d "$search_dir/training-system-v2/frontend" ] && [ -d "$search_dir/training-system-v2/backend" ]; then
-            echo "$search_dir/training-system-v2"
+        if [ -d "$search_dir/knowledge-center" ] && [ -d "$search_dir/knowledge-center/frontend" ] && [ -d "$search_dir/knowledge-center/backend" ]; then
+            echo "$search_dir/knowledge-center"
             return 0
         fi
     done
@@ -119,8 +119,8 @@ check_prerequisites() {
     
     # Check if project root was found
     if [ -z "$PROJECT_ROOT" ]; then
-        log_error "training-system-v2 project directory not found."
-        log_info "Please run this script from within the training-system-v2 project or its parent directory."
+        log_error "knowledge-center project directory not found."
+        log_info "Please run this script from within the knowledge-center project or its parent directory."
         exit 1
     fi
     

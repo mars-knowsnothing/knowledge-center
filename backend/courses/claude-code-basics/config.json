@@ -1,0 +1,41 @@
+{
+  "id": "claude-code-basics",
+  "title": "Claude Code 基础教程",
+  "description": "全面介绍 Anthropic Claude Code 的基本使用方法，包括安装配置、核心功能、常用命令和实际应用场景。适合希望提高编程效率的开发者学习。",
+  "level": "Beginner",
+  "duration": "2 小时",
+  "author": "Claude Code 教程团队",
+  "version": "1.0.0",
+  "features": [
+    "Claude Code 安装与配置",
+    "终端集成与基本操作",
+    "核心功能演示",
+    "实际编程场景应用",
+    "最佳实践指南",
+    "常见问题解决方案"
+  ],
+  "tags": [
+    "claude-code",
+    "ai-coding",
+    "terminal",
+    "开发工具",
+    "编程效率",
+    "anthropic",
+    "命令行",
+    "代码助手"
+  ],
+  "requirements": [
+    "Node.js 18+ 环境",
+    "Claude.ai 账户",
+    "基本命令行操作经验",
+    "编程基础知识"
+  ],
+  "learning_outcomes": [
+    "掌握 Claude Code 的安装和初始配置",
+    "熟练使用 Claude Code 的核心功能",
+    "了解如何在实际项目中集成 Claude Code",
+    "学会利用 Claude Code 提高编程效率",
+    "掌握常见问题的排除方法",
+    "理解 Claude Code 的最佳实践"
+  ]
+}

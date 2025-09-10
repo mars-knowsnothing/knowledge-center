@@ -11,9 +11,7 @@ import Link from "next/link"
 import { 
   ArrowLeftIcon,
   CheckCircleIcon,
-  ExclamationTriangleIcon,
-  PresentationChartBarIcon,
-  DocumentTextIcon
+  ExclamationTriangleIcon 
 } from '@heroicons/react/24/outline'
 
 export default function SlideEditPage({ 
@@ -30,7 +28,6 @@ export default function SlideEditPage({
   const [error, setError] = useState<string | null>(null)
   const [success, setSuccess] = useState<string | null>(null)
   const [content, setContent] = useState('')
-  const [previewMode, setPreviewMode] = useState<'document' | 'presentation'>('document')
   const [currentSlide, setCurrentSlide] = useState(0)
 
   // Initialize markdown renderer
@@ -41,10 +38,39 @@ export default function SlideEditPage({
   })
 
   // Split content into slides for presentation mode
-  const slides = content ? content.split(/\n---\n/).map((slideContent, index) => ({
-    content: slideContent.trim(),
-    html: md.render(slideContent.trim())
-  })) : []
+  const slides = content ? content.split(/\n---\n/).map((slideContent, index) => {
+    // Parse metadata from slide content (if any)
+    const lines = slideContent.trim().split('\n')
+    const metadata: Record<string, any> = {}
+    
+    // Check for metadata in the first few lines
+    let contentStartIndex = 0
+    for (let i = 0; i < Math.min(3, lines.length); i++) {
+      const line = lines[i].trim()
+      if (line.startsWith('theme:')) {
+        metadata.theme = line.replace('theme:', '').trim()
+        contentStartIndex = i + 1
+      } else if (line.startsWith('layout:')) {
+        metadata.layout = line.replace('layout:', '').trim()
+        contentStartIndex = i + 1
+      } else if (line && !line.startsWith('#') && !line.startsWith('theme:') && !line.startsWith('layout:')) {
+        break
+      }
+    }
+    
+    // Extract actual content (removing metadata lines)
+    const actualContent = lines.slice(contentStartIndex).join('\n').trim()
+    
+    return {
+      content: actualContent,
+      html: md.render(actualContent),
+      metadata: {
+        theme: metadata.theme || 'minimal', // Default theme
+        layout: metadata.layout || 'default', // Default layout
+        ...metadata
+      }
+    }
+  }) : []
 
   useEffect(() => {
     async function fetchSlideFile() {
@@ -141,39 +167,13 @@ export default function SlideEditPage({
             </div>
           </div>
           
-          <div className="flex items-center gap-3">
-            <div className="flex bg-gray-100 rounded-lg p-1">
-              <button
-                onClick={() => setPreviewMode('document')}
-                className={`px-2 py-1 rounded-md text-xs font-medium transition-colors flex items-center gap-1 ${
-                  previewMode === 'document'
-                    ? 'bg-white text-gray-900 shadow-sm'
-                    : 'text-gray-600 hover:text-gray-900'
-                }`}
-              >
-                <DocumentTextIcon className="h-3 w-3" />
-                Document
-              </button>
-              <button
-                onClick={() => setPreviewMode('presentation')}
-                className={`px-2 py-1 rounded-md text-xs font-medium transition-colors flex items-center gap-1 ${
-                  previewMode === 'presentation'
-                    ? 'bg-white text-gray-900 shadow-sm'
-                    : 'text-gray-600 hover:text-gray-900'
-                }`}
-              >
-                <PresentationChartBarIcon className="h-3 w-3" />
-                Slides
-              </button>
-            </div>
-            <button
-              onClick={saveSlide}
-              disabled={saving}
-              className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed text-sm"
-            >
-              {saving ? 'Saving...' : 'Save Slide'}
-            </button>
-          </div>
+          <button
+            onClick={saveSlide}
+            disabled={saving}
+            className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed text-sm"
+          >
+            {saving ? 'Saving...' : 'Save Slide'}
+          </button>
         </div>
 
         {/* Status Messages */}
@@ -201,31 +201,25 @@ export default function SlideEditPage({
           <div className="h-1/2 border border-gray-200 rounded-lg mb-4 bg-white overflow-hidden">
             <div className="h-full flex flex-col">
               {/* Preview Header */}
-              <div className="flex items-center justify-between p-3 border-b border-gray-200 bg-gray-50">
+              <div className="flex items-center justify-between p-3 border-b border-gray-200 bg-gray-50 flex-shrink-0">
                 <h3 className="text-sm font-medium text-gray-900">Live Preview</h3>
                 <span className="text-xs text-gray-500">
-                  {previewMode === 'presentation' && slides.length > 1 && `Slide ${currentSlide + 1} of ${slides.length}`}
+                  {slides.length > 1 && `Slide ${currentSlide + 1} of ${slides.length}`}
                 </span>
               </div>
               
               {/* Preview Content */}
-              <div className="flex-1 overflow-hidden">
-                {previewMode === 'presentation' ? (
+              <div className="flex-1 min-h-0 p-4 flex items-center justify-center">
+                <div className="w-full max-w-2xl h-full flex items-center justify-center">
                   <SlideShow
                     slides={slides}
                     currentSlide={currentSlide}
                     onSlideChange={setCurrentSlide}
-                    className="h-full rounded-none border-none"
+                    className="w-full h-full"
+                    containerClassName="w-full h-full rounded border border-gray-200 shadow-sm"
+                    isPreview={true}
                   />
-                ) : (
-                  <div className="h-full p-6 overflow-auto">
-                    <div className="prose prose-lg max-w-none">
-                      <div dangerouslySetInnerHTML={{ 
-                        __html: md.render(content) 
-                      }} />
-                    </div>
-                  </div>
-                )}
+                </div>
               </div>
             </div>
           </div>

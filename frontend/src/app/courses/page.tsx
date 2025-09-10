@@ -114,55 +114,53 @@ export default function CoursesPage() {
           </button>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
           {courses.map((course) => (
-            <div key={course.id} className="bg-white rounded-lg border border-gray-200 shadow-sm hover:shadow-md transition-shadow">
-              {/* Thumbnail placeholder */}
-              <div className="h-48 bg-gradient-to-br from-blue-500 to-purple-600 rounded-t-lg flex items-center justify-center">
-                <BookOpenIcon className="h-16 w-16 text-white opacity-75" />
-              </div>
-
-              <div className="p-6">
-                <h3 className="text-xl font-semibold text-gray-900 mb-2">
-                  {course.title}
-                </h3>
-                <p className="text-gray-600 mb-4 text-sm">
-                  {course.description}
-                </p>
-
-                <div className="flex items-center justify-between text-sm text-gray-500 mb-4">
-                  <div className="flex items-center">
-                    <BookOpenIcon className="h-4 w-4 mr-1" />
-                    <span>{course.slides_count} slides</span>
-                  </div>
-                  {course.duration && (
-                    <div className="flex items-center">
-                      <ClockIcon className="h-4 w-4 mr-1" />
-                      <span>{course.duration}</span>
-                    </div>
-                  )}
-                </div>
-
-                <div className="flex items-center justify-between">
-                  {course.level && (
-                    <span className={`
-                      inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium
-                      ${course.level === 'Beginner' ? 'bg-green-100 text-green-800' :
+            <div key={course.id} className="bg-white rounded-lg border border-gray-200 p-4 shadow-sm hover:shadow-md transition-shadow flex flex-col">
+              <div className="flex items-start justify-between mb-3">
+                <div className="flex-1">
+                  <div className="flex items-center gap-2 mb-1">
+                    <span className="text-xs bg-blue-100 text-blue-800 px-2 py-1 rounded font-medium">{course.slides_count} slides</span>
+                    {course.level && (
+                      <span className={`text-xs px-2 py-1 rounded font-medium ${
+                        course.level === 'Beginner' ? 'bg-green-100 text-green-800' :
                         course.level === 'Intermediate' ? 'bg-yellow-100 text-yellow-800' :
-                        'bg-red-100 text-red-800'}
-                    `}>
-                      <UserIcon className="h-3 w-3 mr-1" />
-                      {course.level}
-                    </span>
-                  )}
-
-                  <Link
-                    href={`/courses/${course.id}`}
-                    className="inline-flex items-center px-3 py-2 border border-blue-300 rounded-md text-sm font-medium text-blue-700 bg-blue-50 hover:bg-blue-100 transition-colors"
-                  >
-                    View Course
-                  </Link>
+                        'bg-red-100 text-red-800'
+                      }`}>
+                        {course.level}
+                      </span>
+                    )}
+                  </div>
+                  <h3 className="text-sm font-medium text-gray-900 mb-2 overflow-hidden" style={{display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical'}}>{course.title}</h3>
+                  <div className="text-xs text-gray-600 mb-3 h-12 overflow-hidden">
+                    {course.description.length > 100 ? course.description.substring(0, 100) + '...' : course.description}
+                  </div>
+                  <div className="h-6 flex items-center text-xs text-gray-500">
+                    {course.duration && (
+                      <>
+                        <ClockIcon className="h-3 w-3 mr-1" />
+                        <span>{course.duration}</span>
+                      </>
+                    )}
+                  </div>
                 </div>
+                <div className="ml-2">
+                  <BookOpenIcon className="h-5 w-5 text-blue-500" />
+                </div>
+              </div>
+              <div className="flex gap-2 mt-auto">
+                <Link 
+                  href={`/courses/${course.id}`}
+                  className="flex-1 inline-flex items-center justify-center px-2 py-1 bg-blue-600 text-white rounded text-xs hover:bg-blue-700 transition-colors"
+                >
+                  View Course
+                </Link>
+                <Link 
+                  href={`/courses/${course.id}/edit`}
+                  className="flex-1 inline-flex items-center justify-center px-2 py-1 border border-gray-300 text-gray-700 rounded text-xs hover:bg-gray-50 transition-colors"
+                >
+                  Edit
+                </Link>
               </div>
             </div>
           ))}

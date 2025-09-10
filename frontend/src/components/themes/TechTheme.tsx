@@ -12,6 +12,7 @@ interface TechThemeProps {
   backgroundColor?: string
   textColor?: string
   isFullscreen?: boolean
+  isPreview?: boolean
 }
 
 export default function TechTheme({ 
@@ -19,7 +20,8 @@ export default function TechTheme({
   layout = 'default',
   backgroundColor = 'from-slate-900 via-purple-900 to-slate-900',
   textColor = 'text-white',
-  isFullscreen = false
+  isFullscreen = false,
+  isPreview = false
 }: TechThemeProps) {
   
   const renderLayout = (content: ReactNode) => {
@@ -38,54 +40,119 @@ export default function TechTheme({
         )
       
       case 'two-column':
+        const twoColumnParts = (typeof children === 'string' ? children : '').split('::right::')
+        const leftContent = twoColumnParts[0] || ''
+        const rightContent = twoColumnParts[1] || ''
+        
+        // Extract title from left content (first line that starts with #)
+        const leftLines = leftContent.trim().split('\n')
+        const titleMatch = leftLines.find(line => line.startsWith('# '))
+        const title = titleMatch || ''
+        
+        // Remove title from left content if found
+        const leftContentWithoutTitle = titleMatch 
+          ? leftLines.filter(line => line !== titleMatch).join('\n').trim()
+          : leftContent.trim()
+        
         return (
-          <div className="h-full grid grid-cols-2 gap-12 items-center">
-            <div className="space-y-6">
-              {content}
-            </div>
-            <div className="flex items-center justify-center">
-              <div className="w-full h-64 bg-gradient-to-br from-blue-500/10 to-purple-500/10 rounded-2xl border border-white/10 flex items-center justify-center">
-                <div className="text-6xl text-white/20">📊</div>
+          <div className="h-full flex flex-col space-y-8">
+            {/* Title Section */}
+            {title && (
+              <div className="text-left">
+                <ReactMarkdown
+                  remarkPlugins={[remarkGfm]}
+                  rehypePlugins={[rehypeHighlight, rehypeRaw]}
+                  components={customComponents}
+                >
+                  {title}
+                </ReactMarkdown>
+              </div>
+            )}
+            
+            {/* Two Column Content */}
+            <div className="flex-1 grid grid-cols-2 gap-12 items-start">
+              <div className="space-y-6">
+                <ReactMarkdown
+                  remarkPlugins={[remarkGfm]}
+                  rehypePlugins={[rehypeHighlight, rehypeRaw]}
+                  components={customComponents}
+                >
+                  {leftContentWithoutTitle}
+                </ReactMarkdown>
+              </div>
+              <div className="space-y-6">
+                <ReactMarkdown
+                  remarkPlugins={[remarkGfm]}
+                  rehypePlugins={[rehypeHighlight, rehypeRaw]}
+                  components={customComponents}
+                >
+                  {rightContent.trim()}
+                </ReactMarkdown>
               </div>
             </div>
           </div>
         )
       
       case 'three-column':
+        const threeColumnContent = (typeof children === 'string' ? children : '')
+        const threeColumnParts = threeColumnContent.split(/::middle::|::right::/)
+        const leftCol = threeColumnParts[0] || ''
+        const middleCol = threeColumnParts[1] || ''
+        const rightCol = threeColumnParts[2] || ''
+        
+        // Extract title from left column content
+        const leftColLines = leftCol.trim().split('\n')
+        const threeColTitleMatch = leftColLines.find(line => line.startsWith('# '))
+        const threeColTitle = threeColTitleMatch || ''
+        
+        // Remove title from left column if found
+        const leftColWithoutTitle = threeColTitleMatch 
+          ? leftColLines.filter(line => line !== threeColTitleMatch).join('\n').trim()
+          : leftCol.trim()
+        
         return (
-          <div className="h-full">
-            <div className="mb-8 text-center">
-              <h2 className="text-4xl font-bold mb-4 bg-gradient-to-r from-blue-400 to-purple-400 bg-clip-text text-transparent">
-                Three Column Layout
-              </h2>
-            </div>
-            <div className="grid grid-cols-3 gap-8 h-3/4">
-              <div className="bg-gradient-to-br from-blue-500/10 to-blue-600/10 rounded-2xl border border-white/10 p-6">
-                <div className="text-center">
-                  <div className="text-4xl mb-4">🚀</div>
-                  <h3 className="text-xl font-semibold mb-3">Column 1</h3>
-                  <div className="text-sm text-gray-300">
-                    {content}
-                  </div>
-                </div>
+          <div className="h-full flex flex-col space-y-8">
+            {/* Title Section */}
+            {threeColTitle && (
+              <div className="text-left">
+                <ReactMarkdown
+                  remarkPlugins={[remarkGfm]}
+                  rehypePlugins={[rehypeHighlight, rehypeRaw]}
+                  components={customComponents}
+                >
+                  {threeColTitle}
+                </ReactMarkdown>
               </div>
-              <div className="bg-gradient-to-br from-purple-500/10 to-purple-600/10 rounded-2xl border border-white/10 p-6">
-                <div className="text-center">
-                  <div className="text-4xl mb-4">⚡</div>
-                  <h3 className="text-xl font-semibold mb-3">Column 2</h3>
-                  <div className="text-sm text-gray-300">
-                    Content for second column
-                  </div>
-                </div>
+            )}
+            
+            {/* Three Column Content */}
+            <div className="flex-1 grid grid-cols-3 gap-8 items-start">
+              <div className="space-y-4">
+                <ReactMarkdown
+                  remarkPlugins={[remarkGfm]}
+                  rehypePlugins={[rehypeHighlight, rehypeRaw]}
+                  components={customComponents}
+                >
+                  {leftColWithoutTitle}
+                </ReactMarkdown>
               </div>
-              <div className="bg-gradient-to-br from-green-500/10 to-green-600/10 rounded-2xl border border-white/10 p-6">
-                <div className="text-center">
-                  <div className="text-4xl mb-4">🎯</div>
-                  <h3 className="text-xl font-semibold mb-3">Column 3</h3>
-                  <div className="text-sm text-gray-300">
-                    Content for third column
-                  </div>
-                </div>
+              <div className="space-y-4">
+                <ReactMarkdown
+                  remarkPlugins={[remarkGfm]}
+                  rehypePlugins={[rehypeHighlight, rehypeRaw]}
+                  components={customComponents}
+                >
+                  {middleCol.trim()}
+                </ReactMarkdown>
+              </div>
+              <div className="space-y-4">
+                <ReactMarkdown
+                  remarkPlugins={[remarkGfm]}
+                  rehypePlugins={[rehypeHighlight, rehypeRaw]}
+                  components={customComponents}
+                >
+                  {rightCol.trim()}
+                </ReactMarkdown>
               </div>
             </div>
           </div>
@@ -132,19 +199,19 @@ export default function TechTheme({
 
   const customComponents = {
     h1: ({ node, ...props }: any) => (
-      <h1 className="text-5xl font-bold mb-8 bg-gradient-to-r from-blue-400 to-purple-400 bg-clip-text text-transparent" {...props} />
+      <h1 className={`${isPreview ? 'text-2xl mb-3' : 'text-5xl mb-8'} font-bold bg-gradient-to-r from-blue-400 to-purple-400 bg-clip-text text-transparent`} {...props} />
     ),
     h2: ({ node, ...props }: any) => (
-      <h2 className="text-4xl font-bold mb-6 bg-gradient-to-r from-blue-300 to-purple-300 bg-clip-text text-transparent" {...props} />
+      <h2 className={`${isPreview ? 'text-xl mb-2' : 'text-4xl mb-6'} font-bold bg-gradient-to-r from-blue-300 to-purple-300 bg-clip-text text-transparent`} {...props} />
     ),
     h3: ({ node, ...props }: any) => (
-      <h3 className="text-2xl font-semibold mb-4 text-blue-300" {...props} />
+      <h3 className={`${isPreview ? 'text-lg mb-2' : 'text-2xl mb-4'} font-semibold text-blue-300`} {...props} />
     ),
     p: ({ node, ...props }: any) => (
-      <p className="text-xl leading-relaxed mb-4 text-gray-100" {...props} />
+      <p className={`${isPreview ? 'text-sm leading-relaxed mb-2' : 'text-xl leading-relaxed mb-4'} text-gray-100`} {...props} />
     ),
     ul: ({ node, ...props }: any) => (
-      <ul className="text-lg space-y-3 text-gray-100" {...props} />
+      <ul className={`${isPreview ? 'text-sm space-y-1' : 'text-lg space-y-3'} text-gray-100`} {...props} />
     ),
     li: ({ node, ...props }: any) => (
       <li className="flex items-start space-x-3" {...props}>
@@ -154,12 +221,12 @@ export default function TechTheme({
     ),
     code: ({ node, inline, ...props }: any) =>
       inline ? (
-        <code className="bg-slate-800 text-blue-300 px-2 py-1 rounded text-base font-mono border border-slate-700" {...props} />
+        <code className={`bg-slate-800 text-blue-300 ${isPreview ? 'px-1 py-0.5 text-xs' : 'px-2 py-1 text-base'} rounded font-mono border border-slate-700`} {...props} />
       ) : (
-        <code className="block bg-slate-900 text-green-300 p-4 rounded-lg text-sm font-mono overflow-x-auto border border-slate-700 shadow-inner" {...props} />
+        <code className={`block bg-slate-900 text-green-300 ${isPreview ? 'p-2 text-xs' : 'p-4 text-sm'} rounded-lg font-mono overflow-x-auto border border-slate-700 shadow-inner`} {...props} />
       ),
     blockquote: ({ node, ...props }: any) => (
-      <blockquote className="border-l-4 border-blue-500 pl-6 py-2 bg-slate-800/30 rounded-r-lg my-4" {...props} />
+      <blockquote className={`border-l-4 border-blue-500 ${isPreview ? 'pl-3 py-1 my-2' : 'pl-6 py-2 my-4'} bg-slate-800/30 rounded-r-lg`} {...props} />
     )
   }
 
@@ -179,7 +246,7 @@ export default function TechTheme({
       }}></div>
       
       {/* Content */}
-      <div className={`relative z-10 h-full ${isFullscreen ? 'p-16' : 'p-12'}`}>
+      <div className={`relative z-10 h-full ${isFullscreen ? 'p-16' : isPreview ? 'p-3' : 'p-12'}`}>
         {renderLayout(
           <ReactMarkdown
             remarkPlugins={[remarkGfm]}

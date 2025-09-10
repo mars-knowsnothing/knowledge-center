@@ -11,13 +11,15 @@ interface MinimalThemeProps {
   layout?: 'default' | 'two-column' | 'three-column' | 'image-text' | 'title-slide' | 'section'
   accentColor?: string
   isFullscreen?: boolean
+  isPreview?: boolean
 }
 
 export default function MinimalTheme({ 
   children, 
   layout = 'default',
   accentColor = 'blue',
-  isFullscreen = false
+  isFullscreen = false,
+  isPreview = false
 }: MinimalThemeProps) {
   
   const getAccentColors = (color: string) => {
@@ -64,56 +66,119 @@ export default function MinimalTheme({
         )
       
       case 'two-column':
+        const twoColumnParts = (typeof children === 'string' ? children : '').split('::right::')
+        const leftContent = twoColumnParts[0] || ''
+        const rightContent = twoColumnParts[1] || ''
+        
+        // Extract title from left content (first line that starts with #)
+        const leftLines = leftContent.trim().split('\n')
+        const titleMatch = leftLines.find(line => line.startsWith('# '))
+        const title = titleMatch || ''
+        
+        // Remove title from left content if found
+        const leftContentWithoutTitle = titleMatch 
+          ? leftLines.filter(line => line !== titleMatch).join('\n').trim()
+          : leftContent.trim()
+        
         return (
-          <div className="h-full grid grid-cols-2 gap-16 items-start">
-            <div className="space-y-6">
-              {content}
-            </div>
-            <div className="flex items-center justify-center h-full">
-              <div className={`w-full h-80 ${colors.bg} rounded-xl ${colors.border} border-2 flex flex-col items-center justify-center relative`}>
-                <div className={`text-6xl ${colors.secondary} mb-4`}>📈</div>
-                <p className={`text-sm ${colors.primary} font-medium`}>Chart / Image Placeholder</p>
+          <div className="h-full flex flex-col space-y-8">
+            {/* Title Section */}
+            {title && (
+              <div className="text-left">
+                <ReactMarkdown
+                  remarkPlugins={[remarkGfm]}
+                  rehypePlugins={[rehypeHighlight, rehypeRaw]}
+                  components={customComponents}
+                >
+                  {title}
+                </ReactMarkdown>
+              </div>
+            )}
+            
+            {/* Two Column Content */}
+            <div className="flex-1 grid grid-cols-2 gap-16 items-start">
+              <div className="space-y-6">
+                <ReactMarkdown
+                  remarkPlugins={[remarkGfm]}
+                  rehypePlugins={[rehypeHighlight, rehypeRaw]}
+                  components={customComponents}
+                >
+                  {leftContentWithoutTitle}
+                </ReactMarkdown>
+              </div>
+              <div className="space-y-6">
+                <ReactMarkdown
+                  remarkPlugins={[remarkGfm]}
+                  rehypePlugins={[rehypeHighlight, rehypeRaw]}
+                  components={customComponents}
+                >
+                  {rightContent.trim()}
+                </ReactMarkdown>
               </div>
             </div>
           </div>
         )
       
       case 'three-column':
+        const threeColumnContent = (typeof children === 'string' ? children : '')
+        const threeColumnParts = threeColumnContent.split(/::middle::|::right::/)
+        const leftCol = threeColumnParts[0] || ''
+        const middleCol = threeColumnParts[1] || ''
+        const rightCol = threeColumnParts[2] || ''
+        
+        // Extract title from left column content
+        const leftColLines = leftCol.trim().split('\n')
+        const threeColTitleMatch = leftColLines.find(line => line.startsWith('# '))
+        const threeColTitle = threeColTitleMatch || ''
+        
+        // Remove title from left column if found
+        const leftColWithoutTitle = threeColTitleMatch 
+          ? leftColLines.filter(line => line !== threeColTitleMatch).join('\n').trim()
+          : leftCol.trim()
+        
         return (
-          <div className="h-full">
-            <div className="mb-12 text-center">
-              <h2 className={`text-4xl font-bold ${colors.primary}`}>
-                Key Features
-              </h2>
-              <div className={`w-16 h-1 bg-gradient-to-r ${colors.gradient} rounded-full mx-auto mt-4`}></div>
-            </div>
-            <div className="grid grid-cols-3 gap-8">
-              <div className="text-center space-y-4">
-                <div className={`w-16 h-16 ${colors.bg} rounded-full flex items-center justify-center ${colors.border} border-2 mx-auto`}>
-                  <span className={`text-2xl ${colors.primary}`}>🎯</span>
-                </div>
-                <h3 className={`text-xl font-semibold ${colors.primary}`}>Feature One</h3>
-                <p className="text-gray-600 text-sm leading-relaxed">
-                  Description of the first key feature or benefit
-                </p>
+          <div className="h-full flex flex-col space-y-8">
+            {/* Title Section */}
+            {threeColTitle && (
+              <div className="text-left">
+                <ReactMarkdown
+                  remarkPlugins={[remarkGfm]}
+                  rehypePlugins={[rehypeHighlight, rehypeRaw]}
+                  components={customComponents}
+                >
+                  {threeColTitle}
+                </ReactMarkdown>
               </div>
-              <div className="text-center space-y-4">
-                <div className={`w-16 h-16 ${colors.bg} rounded-full flex items-center justify-center ${colors.border} border-2 mx-auto`}>
-                  <span className={`text-2xl ${colors.primary}`}>⚡</span>
-                </div>
-                <h3 className={`text-xl font-semibold ${colors.primary}`}>Feature Two</h3>
-                <p className="text-gray-600 text-sm leading-relaxed">
-                  Description of the second key feature or benefit
-                </p>
+            )}
+            
+            {/* Three Column Content */}
+            <div className="flex-1 grid grid-cols-3 gap-8 items-start">
+              <div className="space-y-4">
+                <ReactMarkdown
+                  remarkPlugins={[remarkGfm]}
+                  rehypePlugins={[rehypeHighlight, rehypeRaw]}
+                  components={customComponents}
+                >
+                  {leftColWithoutTitle}
+                </ReactMarkdown>
               </div>
-              <div className="text-center space-y-4">
-                <div className={`w-16 h-16 ${colors.bg} rounded-full flex items-center justify-center ${colors.border} border-2 mx-auto`}>
-                  <span className={`text-2xl ${colors.primary}`}>🚀</span>
-                </div>
-                <h3 className={`text-xl font-semibold ${colors.primary}`}>Feature Three</h3>
-                <p className="text-gray-600 text-sm leading-relaxed">
-                  Description of the third key feature or benefit
-                </p>
+              <div className="space-y-4">
+                <ReactMarkdown
+                  remarkPlugins={[remarkGfm]}
+                  rehypePlugins={[rehypeHighlight, rehypeRaw]}
+                  components={customComponents}
+                >
+                  {middleCol.trim()}
+                </ReactMarkdown>
+              </div>
+              <div className="space-y-4">
+                <ReactMarkdown
+                  remarkPlugins={[remarkGfm]}
+                  rehypePlugins={[rehypeHighlight, rehypeRaw]}
+                  components={customComponents}
+                >
+                  {rightCol.trim()}
+                </ReactMarkdown>
               </div>
             </div>
           </div>
@@ -158,19 +223,19 @@ export default function MinimalTheme({
 
   const customComponents = {
     h1: ({ node, ...props }: any) => (
-      <h1 className={`text-6xl font-bold mb-8 ${colors.primary} leading-tight`} {...props} />
+      <h1 className={`${isPreview ? 'text-3xl mb-3' : 'text-6xl mb-8'} font-bold ${colors.primary} leading-tight`} {...props} />
     ),
     h2: ({ node, ...props }: any) => (
-      <h2 className={`text-4xl font-bold mb-6 ${colors.primary} leading-tight`} {...props} />
+      <h2 className={`${isPreview ? 'text-2xl mb-2' : 'text-4xl mb-6'} font-bold ${colors.primary} leading-tight`} {...props} />
     ),
     h3: ({ node, ...props }: any) => (
-      <h3 className={`text-2xl font-semibold mb-4 ${colors.secondary}`} {...props} />
+      <h3 className={`${isPreview ? 'text-lg mb-2' : 'text-2xl mb-4'} font-semibold ${colors.secondary}`} {...props} />
     ),
     p: ({ node, ...props }: any) => (
-      <p className="text-xl leading-relaxed mb-6 text-gray-700" {...props} />
+      <p className={`${isPreview ? 'text-sm leading-relaxed mb-2' : 'text-xl leading-relaxed mb-6'} text-gray-700`} {...props} />
     ),
     ul: ({ node, ...props }: any) => (
-      <ul className="text-lg space-y-4 text-gray-700" {...props} />
+      <ul className={`${isPreview ? 'text-sm space-y-1' : 'text-lg space-y-4'} text-gray-700`} {...props} />
     ),
     li: ({ node, ...props }: any) => (
       <li className="flex items-start space-x-3" {...props}>
@@ -180,12 +245,12 @@ export default function MinimalTheme({
     ),
     code: ({ node, inline, ...props }: any) =>
       inline ? (
-        <code className={`${colors.bg} ${colors.primary} px-2 py-1 rounded text-base font-mono ${colors.border} border`} {...props} />
+        <code className={`${colors.bg} ${colors.primary} ${isPreview ? 'px-1 py-0.5 text-xs' : 'px-2 py-1 text-base'} rounded font-mono ${colors.border} border`} {...props} />
       ) : (
-        <code className="block bg-gray-50 text-gray-800 p-6 rounded-lg text-sm font-mono overflow-x-auto border border-gray-200 shadow-sm" {...props} />
+        <code className={`block bg-gray-50 text-gray-800 ${isPreview ? 'p-2 text-xs' : 'p-6 text-sm'} rounded-lg font-mono overflow-x-auto border border-gray-200 shadow-sm`} {...props} />
       ),
     blockquote: ({ node, ...props }: any) => (
-      <blockquote className={`border-l-4 ${colors.border.replace('border-', 'border-l-')} pl-6 py-4 ${colors.bg} rounded-r-lg my-6 italic`} {...props} />
+      <blockquote className={`border-l-4 ${colors.border.replace('border-', 'border-l-')} ${isPreview ? 'pl-3 py-2 my-2' : 'pl-6 py-4 my-6'} ${colors.bg} rounded-r-lg italic`} {...props} />
     )
   }
 
@@ -198,7 +263,7 @@ export default function MinimalTheme({
       }}></div>
       
       {/* Content */}
-      <div className={`relative z-10 h-full ${isFullscreen ? 'p-16' : 'p-12'}`}>
+      <div className={`relative z-10 h-full ${isFullscreen ? 'p-16' : isPreview ? 'p-3' : 'p-12'}`}>
         {renderLayout(
           <ReactMarkdown
             remarkPlugins={[remarkGfm]}

@@ -23,6 +23,7 @@ interface Slide {
   id: string
   content: string
   html: string
+  metadata?: Record<string, any>
 }
 
 interface SlideViewerProps {
@@ -108,7 +109,11 @@ export default function SlideViewer({ slides, courseTitle, courseId, hideEditBut
   }
 
   const currentSlideData = slides[currentSlide]
-  const ThemeComponent = getTheme(currentTheme).component
+  
+  // Get theme and layout from slide metadata or fall back to component props
+  const slideTheme = currentSlideData?.metadata?.theme || currentTheme
+  const slideLayout = currentSlideData?.metadata?.layout || currentLayout
+  const ThemeComponent = getTheme(slideTheme).component
 
   return (
     <div className={`
@@ -120,7 +125,7 @@ export default function SlideViewer({ slides, courseTitle, courseId, hideEditBut
           {/* Slide Content */}
           <div className="flex-1 flex items-center justify-center p-8 pb-20">
             <div className="w-[90%] h-[85vh] rounded-lg shadow-2xl overflow-hidden">
-              <ThemeComponent layout={currentLayout}>
+              <ThemeComponent layout={slideLayout}>
                 {currentSlideData.content}
               </ThemeComponent>
             </div>
@@ -236,12 +241,12 @@ export default function SlideViewer({ slides, courseTitle, courseId, hideEditBut
             {/* Preview */}
             <div className="bg-white rounded-lg border border-gray-200 overflow-hidden">
               <div className="bg-gray-50 px-4 py-2 border-b border-gray-200">
-                <h3 className="text-sm font-medium text-gray-900">Preview ({currentTheme} - {currentLayout})</h3>
+                <h3 className="text-sm font-medium text-gray-900">Preview ({slideTheme} - {slideLayout})</h3>
               </div>
               <div className="p-4">
                 <div className="h-64 overflow-hidden rounded border border-gray-100">
                   <div className="transform scale-50 origin-top-left w-[200%] h-[200%]">
-                    <ThemeComponent layout={currentLayout}>
+                    <ThemeComponent layout={slideLayout}>
                       {currentSlideData.content}
                     </ThemeComponent>
                   </div>

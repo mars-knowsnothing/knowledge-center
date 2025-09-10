@@ -172,3 +172,12 @@ body {
 .markdown-content .codehilite .c, .markdown-content .codehilite .c1 { color: #6b7280; font-style: italic; } /* Comments */
 .markdown-content .codehilite .nt { color: #f59e0b; } /* HTML Tags */
 .markdown-content .codehilite .na { color: #3b82f6; } /* HTML Attributes */
+
+/* Hide scrollbar for thumbnail navigation */
+.scrollbar-hide {
+  -ms-overflow-style: none;  /* IE and Edge */
+  scrollbar-width: none;  /* Firefox */
+}
+.scrollbar-hide::-webkit-scrollbar {
+  display: none;  /* Chrome, Safari and Opera */
+}

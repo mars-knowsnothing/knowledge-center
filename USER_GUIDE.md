@@ -133,10 +133,42 @@ Each theme supports multiple layouts:
 - **Section Divider**: Chapter break slides
 
 #### Changing Themes and Layouts
+
+**Global Settings** (applies to all slides by default):
 1. During presentation, look for the **color palette icon** (top-right corner)
-2. Click to open the Theme Selector
+2. Click to open the **Theme & Layout Settings** modal
 3. Choose your preferred theme and layout combination
-4. Changes apply instantly without interrupting presentation
+4. Click **"Apply Changes"** to save settings
+5. Changes apply instantly without interrupting presentation
+
+**Mobile-Responsive Design**:
+- Modal automatically adapts to mobile screens
+- Touch-friendly controls with proper sizing
+- Stacked layout for buttons on small screens
+- Scrollable content when needed
+
+**Per-Slide Settings** (New):
+Individual slides can override global settings using YAML frontmatter:
+
+```markdown
+---
+layout: title-slide
+theme: tech
+---
+
+# Your Slide Title
+This slide uses tech theme with title-slide layout
+
+---
+layout: two-column
+theme: minimal
+---
+
+# Regular Content
+This slide uses minimal theme with two-column layout
+```
+
+**Priority**: Per-slide settings take precedence over global settings
 
 ### Presentation Features
 

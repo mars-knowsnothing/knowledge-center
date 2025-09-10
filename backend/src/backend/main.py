@@ -123,7 +123,7 @@ async def get_course_slides(course_id: str):
     md = markdown.Markdown(extensions=['codehilite', 'fenced_code', 'tables'])
     html_content = md.convert(post.content)
     
-    slides = parse_slides(post.content)
+    slides = parse_slides(post.content, global_metadata=post.metadata)
     
     return {
         "metadata": post.metadata,
@@ -796,18 +796,103 @@ async def get_course_info(course_id: str) -> Dict[str, Any]:
     
     return info
 
-def parse_slides(content: str) -> List[Dict[str, str]]:
+def parse_slides(content: str, global_metadata: dict = None) -> List[Dict[str, str]]:
     slides = []
-    slide_parts = content.split('---')
+    import re
+    import yaml
     
-    for i, part in enumerate(slide_parts):
-        if part.strip():
-            slide = {
-                "id": f"slide-{i + 1}",
-                "content": part.strip(),
-                "html": markdown.markdown(part.strip(), extensions=['codehilite', 'fenced_code', 'tables'])
-            }
-            slides.append(slide)
+    if global_metadata is None:
+        global_metadata = {}
+    
+    # Split on --- that appear on their own line
+    parts = re.split(r'\n---\n', content)
+    
+    i = 0
+    # Check if first part is content without metadata - it should inherit global metadata
+    first_slide_inherits_global = True
+    
+    while i < len(parts):
+        part = parts[i].strip()
+        
+        if not part:
+            i += 1
+            continue
+        
+        metadata = {}
+        content_part = ""
+        
+        # Check if this part looks like YAML frontmatter
+        def is_yaml_metadata(text):
+            if not text or not ':' in text:
+                return False
+            
+            # If it starts with #, it's content
+            if text.strip().startswith('#'):
+                return False
+                
+            lines = text.split('\n')
+            for line in lines:
+                line = line.strip()
+                if line:
+                    # Must be either a comment, empty, or key: value format
+                    if not (line.startswith('#') or 
+                           line == '' or
+                           re.match(r'^[a-zA-Z_][a-zA-Z0-9_-]*\s*:', line)):
+                        return False
+            return True
+        
+        if is_yaml_metadata(part):
+            # This is metadata, next part should be content
+            try:
+                metadata = yaml.safe_load(part) or {}
+                if not isinstance(metadata, dict):
+                    metadata = {}
+            except:
+                metadata = {}
+            
+            # Get the content from the next part
+            if i + 1 < len(parts):
+                content_part = parts[i + 1].strip()
+                i += 2  # Skip both metadata and content parts
+            else:
+                # Metadata without content, skip
+                i += 1
+                continue
+        else:
+            # This is content without metadata
+            content_part = part
+            
+            # If this is the first slide and it doesn't have metadata, inherit global metadata
+            if first_slide_inherits_global and len(slides) == 0:
+                metadata = global_metadata.copy()
+            
+            i += 1
+        
+        # After processing first slide, disable global inheritance
+        first_slide_inherits_global = False
+        
+        # Skip empty content
+        if not content_part or not content_part.strip():
+            continue
+        
+        # Clean up content by removing leading/trailing whitespace and empty lines
+        content_lines = content_part.split('\n')
+        while content_lines and not content_lines[0].strip():
+            content_lines.pop(0)
+        while content_lines and not content_lines[-1].strip():
+            content_lines.pop()
+        content_part = '\n'.join(content_lines)
+        
+        if not content_part:
+            continue
+        
+        slide = {
+            "id": f"slide-{len(slides) + 1}",
+            "content": content_part,
+            "html": markdown.markdown(content_part, extensions=['codehilite', 'fenced_code', 'tables']),
+            "metadata": metadata
+        }
+        slides.append(slide)
     
     return slides
 

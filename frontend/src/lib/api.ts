@@ -15,6 +15,7 @@ export interface Slide {
   id: string
   content: string
   html: string
+  metadata?: Record<string, any>
 }
 
 export interface CourseSlides {

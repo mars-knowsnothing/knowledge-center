@@ -6,9 +6,7 @@ import SlideShow from "@/components/SlideShow"
 import { useState, useEffect } from "react"
 import { api, SlideFile, ApiError } from "@/lib/api"
 import Link from "next/link"
-import { useSearchParams } from 'next/navigation'
-import { ArrowLeftIcon, PresentationChartBarIcon } from '@heroicons/react/24/outline'
-import MarkdownIt from 'markdown-it'
+import { ArrowLeftIcon } from '@heroicons/react/24/outline'
 
 export default function SlideViewPage({ 
   params 
@@ -16,29 +14,47 @@ export default function SlideViewPage({
   params: Promise<{ courseId: string; filename: string }> 
 }) {
   const { courseId, filename } = use(params)
-  const searchParams = useSearchParams()
   
   const [slideFile, setSlideFile] = useState<SlideFile | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+  const [content, setContent] = useState('')
   
-  // Check if mode=presentation is in URL params, default to document mode
-  const initialMode = searchParams?.get('mode') === 'presentation' ? 'presentation' : 'document'
-  const [viewMode, setViewMode] = useState<'document' | 'presentation'>(initialMode)
+  // Always use presentation mode
   const [currentSlide, setCurrentSlide] = useState(0)
 
-  // Split content into slides based on '---' separator
-  const slides = slideFile?.content ? slideFile.content.split(/\n---\n/).map((content) => {
-    // Use MarkdownIt to render each slide
-    const md = new MarkdownIt({
-      html: true,
-      linkify: true,
-      typographer: true
-    })
+  // Parse slides from file content (same as edit page)
+  const slides = content ? content.split(/\n---\n/).map((slideContent, index) => {
+    // Parse metadata from slide content (if any)
+    const lines = slideContent.trim().split('\n')
+    const metadata: Record<string, any> = {}
+    
+    // Check for metadata in the first few lines
+    let contentStartIndex = 0
+    for (let i = 0; i < Math.min(3, lines.length); i++) {
+      const line = lines[i].trim()
+      if (line.startsWith('theme:')) {
+        metadata.theme = line.replace('theme:', '').trim()
+        contentStartIndex = i + 1
+      } else if (line.startsWith('layout:')) {
+        metadata.layout = line.replace('layout:', '').trim()
+        contentStartIndex = i + 1
+      } else if (line && !line.startsWith('#') && !line.startsWith('theme:') && !line.startsWith('layout:')) {
+        break
+      }
+    }
+    
+    // Extract actual content (removing metadata lines)
+    const actualContent = lines.slice(contentStartIndex).join('\n').trim()
     
     return {
-      content: content.trim(),
-      html: md.render(content.trim())
+      content: actualContent,
+      html: actualContent, // Will be processed by SlideShow
+      metadata: {
+        theme: metadata.theme || 'minimal', // Default theme
+        layout: metadata.layout || 'default', // Default layout
+        ...metadata
+      }
     }
   }) : []
 
@@ -50,6 +66,7 @@ export default function SlideViewPage({
 
         const slideData = await api.getSlideFileContent(courseId, filename)
         setSlideFile(slideData)
+        setContent(slideData.content)
       } catch (err) {
         if (err instanceof ApiError) {
           setError(err.status === 404 ? 'Slide file not found' : err.message)
@@ -121,7 +138,7 @@ export default function SlideViewPage({
             </Link>
             <div>
               <h1 className="text-3xl font-bold text-gray-900">
-                {slideFile.title}
+                {slideFile?.title || 'Slide Presentation'}
               </h1>
               <p className="text-gray-600 mt-1">
                 {filename} {slides.length > 1 && `• ${slides.length} slides`}
@@ -129,54 +146,21 @@ export default function SlideViewPage({
             </div>
           </div>
           
-          <div className="flex gap-2">
-            <div className="flex bg-gray-100 rounded-lg p-1">
-              <button
-                onClick={() => setViewMode('document')}
-                className={`px-3 py-2 rounded-md text-sm font-medium transition-colors ${
-                  viewMode === 'document'
-                    ? 'bg-white text-gray-900 shadow-sm'
-                    : 'text-gray-600 hover:text-gray-900'
-                }`}
-              >
-                Document
-              </button>
-              <button
-                onClick={() => setViewMode('presentation')}
-                className={`px-3 py-2 rounded-md text-sm font-medium transition-colors flex items-center gap-1 ${
-                  viewMode === 'presentation'
-                    ? 'bg-white text-gray-900 shadow-sm'
-                    : 'text-gray-600 hover:text-gray-900'
-                }`}
-              >
-                <PresentationChartBarIcon className="h-4 w-4" />
-                Presentation
-              </button>
-            </div>
-            <Link
-              href={`/courses/${courseId}/slides/${filename}/edit`}
-              className="inline-flex items-center px-4 py-2 border border-gray-300 text-gray-700 rounded-md hover:bg-gray-50 transition-colors"
-            >
-              Edit Slide
-            </Link>
-          </div>
+          <Link
+            href={`/courses/${courseId}/slides/${filename}/edit`}
+            className="inline-flex items-center px-4 py-2 border border-gray-300 text-gray-700 rounded-md hover:bg-gray-50 transition-colors"
+          >
+            Edit Slide
+          </Link>
         </div>
 
         {/* Content */}
-        {viewMode === 'presentation' ? (
-          <SlideShow
-            slides={slides}
-            currentSlide={currentSlide}
-            onSlideChange={setCurrentSlide}
-            className="w-full"
-          />
-        ) : (
-          <div className="bg-white rounded-lg border border-gray-200 p-8">
-            <div className="prose prose-lg max-w-none">
-              <div dangerouslySetInnerHTML={{ __html: slideFile.html }} />
-            </div>
-          </div>
-        )}
+        <SlideShow
+          slides={slides}
+          currentSlide={currentSlide}
+          onSlideChange={setCurrentSlide}
+          className="w-full"
+        />
       </div>
     </Layout>
   )

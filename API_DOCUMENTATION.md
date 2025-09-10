@@ -159,7 +159,11 @@ GET /api/courses/{course_id}/slides
     {
       "id": "slide-1",
       "content": "# Slide Title\n\nSlide content in markdown",
-      "html": "<h1>Slide Title</h1><p>Slide content in HTML</p>"
+      "html": "<h1>Slide Title</h1><p>Slide content in HTML</p>",
+      "metadata": {
+        "layout": "title-slide",
+        "theme": "tech"
+      }
     }
   ],
   "html": "<full_html_content>"
@@ -401,6 +405,37 @@ Request successful
 - Slides separated by `---` (three hyphens)
 - Each slide processed independently
 - Supports HTML mixing with Markdown
+
+### Per-Slide Configuration (New)
+Individual slides can specify their own theme and layout using YAML frontmatter:
+
+```markdown
+---
+layout: title-slide
+theme: tech
+---
+
+# Your Slide Title
+Content goes here
+
+---
+layout: two-column
+theme: minimal
+---
+
+# Next Slide
+Different layout and theme
+```
+
+**Supported Parameters**:
+- `layout`: `default`, `title-slide`, `section`, `two-column`, `three-column`, `image-text`
+- `theme`: `tech` (dark gradient), `minimal` (clean light)
+- Additional custom properties can be included and will be passed to frontend components
+
+**Behavior**:
+- Per-slide settings override global theme/layout defaults
+- If no frontmatter is specified, global settings are used
+- Invalid values fall back to defaults gracefully
 
 ### Asset Types
 - **Images**: PNG, JPG, GIF, SVG

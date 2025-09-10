@@ -17,6 +17,8 @@ A modern, full-stack training platform with **Slidev-enhanced presentation syste
 
 ### 🎨 **Slidev-Enhanced Presentations**
 - **Professional Themes**: Tech and Minimal themes with multiple layouts
+- **Per-Slide Customization**: YAML frontmatter support for individual slide themes/layouts
+- **Responsive Theme Selector**: Mobile-optimized theme and layout configuration modal
 - **Math Rendering**: KaTeX support for mathematical expressions  
 - **Interactive Diagrams**: Mermaid charts and flowcharts
 - **Enhanced Code Highlighting**: Syntax highlighting with copy functionality
@@ -41,6 +43,13 @@ A modern, full-stack training platform with **Slidev-enhanced presentation syste
 - **Backend**: FastAPI with Python 3.12+ and async support
 - **Real-time**: Live updates and responsive design
 - **Production Ready**: Smart service management and monitoring
+
+### 🆕 **Recent Improvements**
+- **✅ Responsive Theme Selector**: Fixed mobile layout issues and touch-friendly interface
+- **✅ Per-Slide Configuration**: YAML frontmatter parsing now correctly applies themes/layouts
+- **✅ Enhanced Slide Parser**: Improved backend parsing of slide metadata and content
+- **✅ Mobile-First Design**: Theme & Layout Settings modal fully responsive
+- **✅ Proper Fallbacks**: Global settings with per-slide overrides working seamlessly
 
 ## 📁 Project Structure
 
@@ -100,28 +109,29 @@ yarn dev
 - **Progress Indicators** - Slide counter and progress bar
 
 ### Enhanced Content Support
+
+#### Per-Slide Theme and Layout Configuration
+Each slide can now specify its own theme and layout using YAML frontmatter:
+
 ```markdown
 ---
 layout: title-slide
 theme: tech
-background: "linear-gradient(135deg, #667eea 0%, #764ba2 100%)"
 ---
 
 # Your Presentation Title
-
 ## With Professional Styling
-
-### 🚀 Modern slide layouts and themes
 
 ---
 layout: two-column
+theme: tech
 ---
 
 # Content & Code Side by Side
 
 ## Left Column Content
 - Professional layouts
-- Multiple themes
+- Multiple themes  
 - Interactive elements
 
 ::right::
@@ -134,6 +144,9 @@ function example() {
 }
 ```
 
+---
+layout: section
+theme: minimal
 ---
 
 # Math & Diagrams
@@ -152,6 +165,12 @@ graph TD
     B --> C[End]
 ```
 ```
+
+#### Available Themes and Layouts
+- **Themes**: `tech` (dark gradient), `minimal` (clean light)
+- **Layouts**: `default`, `title-slide`, `section`, `two-column`, `three-column`, `image-text`
+- **Global Settings**: Use Theme & Layout Settings modal to set defaults
+- **Per-Slide Override**: YAML frontmatter takes precedence over global settings
 
 ## 📚 Documentation
 

@@ -167,7 +167,7 @@ export default function CourseDetailPage({ params }: { params: Promise<{ courseI
           {slideFiles.length > 0 ? (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 max-h-96 overflow-y-auto">
               {slideFiles.slice(0, 8).map((slideFile) => (
-                <div key={slideFile.filename} className="bg-white rounded-lg border border-gray-200 p-4 shadow-sm hover:shadow-md transition-shadow">
+                <div key={slideFile.filename} className="bg-white rounded-lg border border-gray-200 p-4 shadow-sm hover:shadow-md transition-shadow flex flex-col">
                   <div className="flex items-start justify-between mb-3">
                     <div className="flex-1">
                       <div className="flex items-center gap-2 mb-1">
@@ -187,7 +187,7 @@ export default function CourseDetailPage({ params }: { params: Promise<{ courseI
                       <DocumentTextIcon className="h-5 w-5 text-blue-500" />
                     </div>
                   </div>
-                  <div className="flex gap-2">
+                  <div className="flex gap-2 mt-auto">
                     <Link 
                       href={`/courses/${courseId}/slides/${slideFile.filename}?mode=presentation`}
                       className="flex-1 inline-flex items-center justify-center px-2 py-1 bg-blue-600 text-white rounded text-xs hover:bg-blue-700 transition-colors"
@@ -240,22 +240,22 @@ export default function CourseDetailPage({ params }: { params: Promise<{ courseI
           {labs.length > 0 ? (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 max-h-96 overflow-y-auto">
               {labs.slice(0, 8).map((lab) => (
-                <div key={lab.chapter} className="bg-white rounded-lg border border-gray-200 p-4 shadow-sm hover:shadow-md transition-shadow">
+                <div key={lab.chapter} className="bg-white rounded-lg border border-gray-200 p-4 shadow-sm hover:shadow-md transition-shadow flex flex-col">
                   <div className="flex items-start justify-between mb-3">
                     <div className="flex-1">
                       <div className="flex items-center gap-2 mb-1">
                         <span className="text-xs bg-green-100 text-green-800 px-2 py-1 rounded font-medium">Lab {lab.chapter}</span>
                       </div>
-                      <h3 className="text-lg font-medium text-gray-900 mb-2 overflow-hidden" style={{display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical'}}>{lab.title}</h3>
-                      <div className="text-xs text-gray-500 mb-3 h-8 overflow-hidden">
-                        {lab.content.substring(0, 80)}...
+                      <h3 className="text-sm font-medium text-gray-900 mb-2 overflow-hidden" style={{display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical'}}>{lab.title}</h3>
+                      <div className="text-xs text-gray-600 mb-3 h-12 overflow-hidden">
+                        {lab.content.substring(0, 100)}...
                       </div>
                     </div>
                     <div className="ml-2">
                       <BeakerIcon className="h-5 w-5 text-green-500" />
                     </div>
                   </div>
-                  <div className="flex gap-2">
+                  <div className="flex gap-2 mt-auto">
                     <Link 
                       href={`/labs/${courseId}/${lab.chapter}`}
                       className="flex-1 inline-flex items-center justify-center px-2 py-1 bg-green-600 text-white rounded text-xs hover:bg-green-700 transition-colors"
@@ -266,7 +266,7 @@ export default function CourseDetailPage({ params }: { params: Promise<{ courseI
                       href={`/labs/${courseId}/${lab.chapter}/edit`}
                       className="flex-1 inline-flex items-center justify-center px-2 py-1 border border-gray-300 text-gray-700 rounded text-xs hover:bg-gray-50 transition-colors"
                     >
-                      Edit Lab
+                      Edit
                     </Link>
                   </div>
                 </div>
