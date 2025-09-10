@@ -3,7 +3,7 @@ layout: title-slide
 theme: tech
 ---
 
-# Claude Code 基础教程
+# 🤖 Claude Code 基础教程
 
 ## Anthropic 官方 AI 编程助手
 
@@ -11,7 +11,7 @@ theme: tech
 
 ---
 layout: section
-theme: minimal
+theme: tech
 ---
 
 # 📖 课程概览
@@ -20,10 +20,10 @@ theme: minimal
 
 ---
 layout: default
-theme: minimal
+theme: tech
 ---
 
-# 学习目标
+# 🎯 学习目标
 
 ### 您将能够：
 
@@ -83,7 +83,7 @@ theme: tech
 
 ---
 layout: section
-theme: minimal
+theme: tech
 ---
 
 # 🛠 安装与配置
@@ -92,7 +92,7 @@ theme: minimal
 
 ---
 layout: default
-theme: minimal
+theme: tech
 ---
 
 # 📦 快速安装
@@ -163,7 +163,7 @@ claude> 这个查询太慢了
 
 ---
 layout: section
-theme: minimal
+theme: tech
 ---
 
 # 💡 最佳实践
@@ -172,7 +172,7 @@ theme: minimal
 
 ---
 layout: default
-theme: minimal
+theme: tech
 ---
 
 # 🎯 有效提示技巧
@@ -197,11 +197,11 @@ claude> 这个组件很好，但能否
 
 ---
 layout: title-slide
-theme: minimal
+theme: tech
 ---
 
 # 🎉 恭喜完成学习！
 
 ## Claude Code 基础教程
 
-#### 开始您的 AI 辅助编程之旅吧！
+### 开始您的 AI 辅助编程之旅吧！

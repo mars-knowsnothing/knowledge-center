@@ -173,7 +173,7 @@ export default function SlideShow({ slides, currentSlide, onSlideChange, classNa
           {!isFullscreen && (
             <button
               onClick={() => setShowThemeSelector(true)}
-              className="absolute top-4 right-4 p-2 rounded-full transition-colors hover:bg-black/10 text-gray-700 pointer-events-auto z-50"
+              className="absolute top-4 right-4 p-2 rounded-full transition-colors hover:bg-black/10 text-gray-700 pointer-events-auto z-50 shadow-lg border border-gray-200 bg-white/90 backdrop-blur-sm hover:bg-white"
             >
               <SwatchIcon className="h-5 w-5" />
             </button>
@@ -188,12 +188,12 @@ export default function SlideShow({ slides, currentSlide, onSlideChange, classNa
                 if (currentSlide > 0) onSlideChange(currentSlide - 1)
               }}
               disabled={currentSlide === 0}
-              className={`${isPreview ? 'p-1' : 'p-2'} rounded-full transition-colors ${
+              className={`${isPreview ? 'p-1' : 'p-2'} rounded-full transition-colors shadow-lg border ${
                 currentSlide === 0
-                  ? 'opacity-50 cursor-not-allowed'
+                  ? 'opacity-50 cursor-not-allowed bg-gray-100 border-gray-300'
                   : isFullscreen
-                    ? 'hover:bg-white/20 text-white bg-black/20'
-                    : 'hover:bg-white/80 text-gray-700 bg-white/60'
+                    ? 'hover:bg-white/30 text-white bg-black/40 border-white/20 backdrop-blur-sm'
+                    : 'hover:bg-white text-gray-700 bg-white/90 border-gray-200 backdrop-blur-sm'
               }`}
             >
               <ChevronLeftIcon className={`${isPreview ? 'h-3 w-3' : 'h-5 w-5'}`} />
@@ -205,10 +205,10 @@ export default function SlideShow({ slides, currentSlide, onSlideChange, classNa
                 e.stopPropagation()
                 setIsPlaying(!isPlaying)
               }}
-              className={`${isPreview ? 'p-1' : 'p-2'} rounded-full transition-colors ${
+              className={`${isPreview ? 'p-1' : 'p-2'} rounded-full transition-colors shadow-lg border ${
                 isFullscreen
-                  ? 'hover:bg-white/20 text-white bg-black/20'
-                  : 'hover:bg-white/80 text-gray-700 bg-white/60'
+                  ? 'hover:bg-white/30 text-white bg-black/40 border-white/20 backdrop-blur-sm'
+                  : 'hover:bg-white text-gray-700 bg-white/90 border-gray-200 backdrop-blur-sm'
               }`}
             >
               {isPlaying ? (
@@ -225,12 +225,12 @@ export default function SlideShow({ slides, currentSlide, onSlideChange, classNa
                 if (currentSlide < slides.length - 1) onSlideChange(currentSlide + 1)
               }}
               disabled={currentSlide === slides.length - 1}
-              className={`${isPreview ? 'p-1' : 'p-2'} rounded-full transition-colors ${
+              className={`${isPreview ? 'p-1' : 'p-2'} rounded-full transition-colors shadow-lg border ${
                 currentSlide === slides.length - 1
-                  ? 'opacity-50 cursor-not-allowed'
+                  ? 'opacity-50 cursor-not-allowed bg-gray-100 border-gray-300'
                   : isFullscreen
-                    ? 'hover:bg-white/20 text-white bg-black/20'
-                    : 'hover:bg-white/80 text-gray-700 bg-white/60'
+                    ? 'hover:bg-white/30 text-white bg-black/40 border-white/20 backdrop-blur-sm'
+                    : 'hover:bg-white text-gray-700 bg-white/90 border-gray-200 backdrop-blur-sm'
               }`}
             >
               <ChevronRightIcon className={`${isPreview ? 'h-3 w-3' : 'h-5 w-5'}`} />
@@ -243,10 +243,10 @@ export default function SlideShow({ slides, currentSlide, onSlideChange, classNa
                   e.stopPropagation()
                   toggleFullscreen()
                 }}
-                className={`${isPreview ? 'p-1' : 'p-2'} rounded-full transition-colors ${
+                className={`${isPreview ? 'p-1' : 'p-2'} rounded-full transition-colors shadow-lg border ${
                   isFullscreen
-                    ? 'hover:bg-white/20 text-white bg-black/20'
-                    : 'hover:bg-white/80 text-gray-700 bg-white/60'
+                    ? 'hover:bg-white/30 text-white bg-black/40 border-white/20 backdrop-blur-sm'
+                    : 'hover:bg-white text-gray-700 bg-white/90 border-gray-200 backdrop-blur-sm'
                 }`}
               >
                 {isFullscreen ? (
@@ -259,10 +259,10 @@ export default function SlideShow({ slides, currentSlide, onSlideChange, classNa
           </div>
 
           {/* Slide Counter */}
-          <div className={`absolute ${isPreview ? 'bottom-2 right-1 text-xs px-1 py-0.5' : 'bottom-4 right-4 text-sm px-2 py-1'} pointer-events-none z-40 rounded ${
+          <div className={`absolute ${isPreview ? 'bottom-2 right-1 text-xs px-1 py-0.5' : 'bottom-4 right-4 text-sm px-2 py-1'} pointer-events-none z-40 rounded shadow-lg border ${
             isFullscreen 
-              ? 'text-white bg-black/20' 
-              : 'text-gray-700 bg-white/60'
+              ? 'text-white bg-black/40 border-white/20 backdrop-blur-sm' 
+              : 'text-gray-700 bg-white/90 border-gray-200 backdrop-blur-sm'
           }`}>
             {currentSlide + 1} / {slides.length}
           </div>

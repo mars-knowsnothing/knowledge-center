@@ -222,15 +222,102 @@ export default function MinimalTheme({
   }
 
   const customComponents = {
-    h1: ({ node, ...props }: any) => (
-      <h1 className={`${isPreview ? 'text-3xl mb-3' : 'text-6xl mb-8'} font-bold ${colors.primary} leading-tight`} {...props} />
-    ),
-    h2: ({ node, ...props }: any) => (
-      <h2 className={`${isPreview ? 'text-2xl mb-2' : 'text-4xl mb-6'} font-bold ${colors.primary} leading-tight`} {...props} />
-    ),
-    h3: ({ node, ...props }: any) => (
-      <h3 className={`${isPreview ? 'text-lg mb-2' : 'text-2xl mb-4'} font-semibold ${colors.secondary}`} {...props} />
-    ),
+    h1: ({ node, ...props }: any) => {
+      // Check if the content contains emojis
+      const content = props.children?.toString() || ''
+      const hasEmojis = /\p{Emoji}/u.test(content)
+      
+      if (hasEmojis) {
+        // Split content to separate emojis from text and apply different styles
+        const parts = content.split(/(\p{Emoji}\p{Emoji_Modifier}*)/gu)
+        return (
+          <h1 className={`${isPreview ? 'text-3xl mb-3' : 'text-6xl mb-8'} font-bold leading-tight`} style={{
+            fontFamily: 'system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, "Noto Sans", sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji"'
+          }} {...props}>
+            {parts.map((part, index) => {
+              const isEmoji = /\p{Emoji}/u.test(part)
+              return (
+                <span 
+                  key={index} 
+                  className={isEmoji ? '' : colors.primary}
+                  style={isEmoji ? { color: 'inherit' } : {}}
+                >
+                  {part}
+                </span>
+              )
+            })}
+          </h1>
+        )
+      } else {
+        return (
+          <h1 className={`${isPreview ? 'text-3xl mb-3' : 'text-6xl mb-8'} font-bold ${colors.primary} leading-tight`} {...props} />
+        )
+      }
+    },
+    h2: ({ node, ...props }: any) => {
+      // Check if the content contains emojis
+      const content = props.children?.toString() || ''
+      const hasEmojis = /\p{Emoji}/u.test(content)
+      
+      if (hasEmojis) {
+        // Split content to separate emojis from text and apply different styles
+        const parts = content.split(/(\p{Emoji}\p{Emoji_Modifier}*)/gu)
+        return (
+          <h2 className={`${isPreview ? 'text-2xl mb-2' : 'text-4xl mb-6'} font-bold leading-tight`} style={{
+            fontFamily: 'system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, "Noto Sans", sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji"'
+          }} {...props}>
+            {parts.map((part, index) => {
+              const isEmoji = /\p{Emoji}/u.test(part)
+              return (
+                <span 
+                  key={index} 
+                  className={isEmoji ? '' : colors.primary}
+                  style={isEmoji ? { color: 'inherit' } : {}}
+                >
+                  {part}
+                </span>
+              )
+            })}
+          </h2>
+        )
+      } else {
+        return (
+          <h2 className={`${isPreview ? 'text-2xl mb-2' : 'text-4xl mb-6'} font-bold ${colors.primary} leading-tight`} {...props} />
+        )
+      }
+    },
+    h3: ({ node, ...props }: any) => {
+      // Check if the content contains emojis
+      const content = props.children?.toString() || ''
+      const hasEmojis = /\p{Emoji}/u.test(content)
+      
+      if (hasEmojis) {
+        // Split content to separate emojis from text and apply different styles
+        const parts = content.split(/(\p{Emoji}\p{Emoji_Modifier}*)/gu)
+        return (
+          <h3 className={`${isPreview ? 'text-lg mb-2' : 'text-2xl mb-4'} font-semibold`} style={{
+            fontFamily: 'system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, "Noto Sans", sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji"'
+          }} {...props}>
+            {parts.map((part, index) => {
+              const isEmoji = /\p{Emoji}/u.test(part)
+              return (
+                <span 
+                  key={index} 
+                  className={isEmoji ? '' : colors.secondary}
+                  style={isEmoji ? { color: 'inherit' } : {}}
+                >
+                  {part}
+                </span>
+              )
+            })}
+          </h3>
+        )
+      } else {
+        return (
+          <h3 className={`${isPreview ? 'text-lg mb-2' : 'text-2xl mb-4'} font-semibold ${colors.secondary}`} {...props} />
+        )
+      }
+    },
     p: ({ node, ...props }: any) => (
       <p className={`${isPreview ? 'text-sm leading-relaxed mb-2' : 'text-xl leading-relaxed mb-6'} text-gray-700`} {...props} />
     ),

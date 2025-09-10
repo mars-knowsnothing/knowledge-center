@@ -133,32 +133,32 @@ export default function SlideViewer({ slides, courseTitle, courseId, hideEditBut
 
           {/* Controls */}
           <div className="absolute bottom-4 left-1/2 transform -translate-x-1/2">
-            <div className="flex items-center space-x-4 bg-black bg-opacity-75 text-white px-6 py-3 rounded-full">
+            <div className="flex items-center space-x-4 bg-black/70 text-white px-6 py-3 rounded-full shadow-lg border border-white/20 backdrop-blur-sm">
               <button
                 onClick={previousSlide}
                 disabled={currentSlide === 0}
-                className="p-2 hover:bg-white hover:bg-opacity-20 rounded-full disabled:opacity-50 disabled:cursor-not-allowed"
+                className="p-2 hover:bg-white/30 rounded-full disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
               >
                 <ChevronLeftIcon className="h-5 w-5" />
               </button>
               
-              <span className="text-sm px-4">
+              <span className="text-sm px-4 font-medium">
                 {currentSlide + 1} / {slides.length}
               </span>
               
               <button
                 onClick={nextSlide}
                 disabled={currentSlide === slides.length - 1}
-                className="p-2 hover:bg-white hover:bg-opacity-20 rounded-full disabled:opacity-50 disabled:cursor-not-allowed"
+                className="p-2 hover:bg-white/30 rounded-full disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
               >
                 <ChevronRightIcon className="h-5 w-5" />
               </button>
               
-              <div className="w-px h-6 bg-white bg-opacity-30 mx-2" />
+              <div className="w-px h-6 bg-white/50 mx-2" />
               
               <button
                 onClick={toggleFullscreen}
-                className="p-2 hover:bg-white hover:bg-opacity-20 rounded-full"
+                className="p-2 hover:bg-white/30 rounded-full transition-colors"
               >
                 {isFullscreen ? (
                   <ArrowsPointingInIcon className="h-5 w-5" />
@@ -169,14 +169,14 @@ export default function SlideViewer({ slides, courseTitle, courseId, hideEditBut
               
               <button
                 onClick={togglePresentation}
-                className="p-2 hover:bg-white hover:bg-opacity-20 rounded-full"
+                className="p-2 hover:bg-white/30 rounded-full transition-colors"
               >
                 <PauseIcon className="h-5 w-5" />
               </button>
               
               <button
                 onClick={() => setShowThemeSelector(true)}
-                className="p-2 hover:bg-white hover:bg-opacity-20 rounded-full"
+                className="p-2 hover:bg-white/30 rounded-full transition-colors"
               >
                 <SwatchIcon className="h-5 w-5" />
               </button>

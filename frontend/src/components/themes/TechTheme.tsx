@@ -198,15 +198,102 @@ export default function TechTheme({
   }
 
   const customComponents = {
-    h1: ({ node, ...props }: any) => (
-      <h1 className={`${isPreview ? 'text-2xl mb-3' : 'text-5xl mb-8'} font-bold bg-gradient-to-r from-blue-400 to-purple-400 bg-clip-text text-transparent`} {...props} />
-    ),
-    h2: ({ node, ...props }: any) => (
-      <h2 className={`${isPreview ? 'text-xl mb-2' : 'text-4xl mb-6'} font-bold bg-gradient-to-r from-blue-300 to-purple-300 bg-clip-text text-transparent`} {...props} />
-    ),
-    h3: ({ node, ...props }: any) => (
-      <h3 className={`${isPreview ? 'text-lg mb-2' : 'text-2xl mb-4'} font-semibold text-blue-300`} {...props} />
-    ),
+    h1: ({ node, ...props }: any) => {
+      // Check if the content contains emojis
+      const content = props.children?.toString() || ''
+      const hasEmojis = /\p{Emoji}/u.test(content)
+      
+      if (hasEmojis) {
+        // Split content to separate emojis from text and apply different styles
+        const parts = content.split(/(\p{Emoji}\p{Emoji_Modifier}*)/gu)
+        return (
+          <h1 className={`${isPreview ? 'text-2xl mb-3' : 'text-5xl mb-8'} font-bold`} style={{
+            fontFamily: 'system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, "Noto Sans", sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji"'
+          }} {...props}>
+            {parts.map((part, index) => {
+              const isEmoji = /\p{Emoji}/u.test(part)
+              return (
+                <span 
+                  key={index} 
+                  className={isEmoji ? '' : 'text-white'}
+                  style={isEmoji ? { color: 'inherit' } : {}}
+                >
+                  {part}
+                </span>
+              )
+            })}
+          </h1>
+        )
+      } else {
+        return (
+          <h1 className={`${isPreview ? 'text-2xl mb-3' : 'text-5xl mb-8'} font-bold bg-gradient-to-r from-blue-400 to-purple-400 bg-clip-text text-transparent`} {...props} />
+        )
+      }
+    },
+    h2: ({ node, ...props }: any) => {
+      // Check if the content contains emojis
+      const content = props.children?.toString() || ''
+      const hasEmojis = /\p{Emoji}/u.test(content)
+      
+      if (hasEmojis) {
+        // Split content to separate emojis from text and apply different styles
+        const parts = content.split(/(\p{Emoji}\p{Emoji_Modifier}*)/gu)
+        return (
+          <h2 className={`${isPreview ? 'text-xl mb-2' : 'text-4xl mb-6'} font-bold`} style={{
+            fontFamily: 'system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, "Noto Sans", sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji"'
+          }} {...props}>
+            {parts.map((part, index) => {
+              const isEmoji = /\p{Emoji}/u.test(part)
+              return (
+                <span 
+                  key={index} 
+                  className={isEmoji ? '' : 'text-white'}
+                  style={isEmoji ? { color: 'inherit' } : {}}
+                >
+                  {part}
+                </span>
+              )
+            })}
+          </h2>
+        )
+      } else {
+        return (
+          <h2 className={`${isPreview ? 'text-xl mb-2' : 'text-4xl mb-6'} font-bold bg-gradient-to-r from-blue-300 to-purple-300 bg-clip-text text-transparent`} {...props} />
+        )
+      }
+    },
+    h3: ({ node, ...props }: any) => {
+      // Check if the content contains emojis
+      const content = props.children?.toString() || ''
+      const hasEmojis = /\p{Emoji}/u.test(content)
+      
+      if (hasEmojis) {
+        // Split content to separate emojis from text and apply different styles
+        const parts = content.split(/(\p{Emoji}\p{Emoji_Modifier}*)/gu)
+        return (
+          <h3 className={`${isPreview ? 'text-lg mb-2' : 'text-2xl mb-4'} font-semibold`} style={{
+            fontFamily: 'system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, "Noto Sans", sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji"'
+          }} {...props}>
+            {parts.map((part, index) => {
+              const isEmoji = /\p{Emoji}/u.test(part)
+              return (
+                <span 
+                  key={index} 
+                  className={isEmoji ? '' : 'text-blue-300'}
+                  style={isEmoji ? { color: 'inherit' } : {}}
+                >
+                  {part}
+                </span>
+              )
+            })}
+          </h3>
+        )
+      } else {
+        return (
+          <h3 className={`${isPreview ? 'text-lg mb-2' : 'text-2xl mb-4'} font-semibold text-blue-300`} {...props} />
+        )
+      }
+    },
     p: ({ node, ...props }: any) => (
       <p className={`${isPreview ? 'text-sm leading-relaxed mb-2' : 'text-xl leading-relaxed mb-4'} text-gray-100`} {...props} />
     ),
