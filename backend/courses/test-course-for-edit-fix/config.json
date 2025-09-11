@@ -1,0 +1,8 @@
+{
+  "id": "test-course-for-edit-fix",
+  "title": "Test Course for Edit Fix",
+  "description": "Testing the UUID-based edit system with proper metadata handling",
+  "level": "Beginner",
+  "author": "Training Team",
+  "tags": []
+}

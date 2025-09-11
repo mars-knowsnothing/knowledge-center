@@ -1,9 +1,9 @@
 ---
-layout: title-slide
+layout: section
 theme: tech
 ---
 
-# 🤖 Claude Code 基础教程
+# 🤖 Claude Code 基础教程 101
 
 ## Anthropic 官方 AI 编程助手
 

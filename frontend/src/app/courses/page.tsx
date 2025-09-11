@@ -156,10 +156,10 @@ export default function CoursesPage() {
                   View Course
                 </Link>
                 <Link 
-                  href={`/courses/${course.id}/edit`}
+                  href={`/courses/${course.id}/slides`}
                   className="flex-1 inline-flex items-center justify-center px-2 py-1 border border-gray-300 text-gray-700 rounded text-xs hover:bg-gray-50 transition-colors"
                 >
-                  Edit
+                  Slides
                 </Link>
               </div>
             </div>

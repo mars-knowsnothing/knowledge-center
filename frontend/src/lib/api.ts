@@ -92,6 +92,26 @@ export interface SlideFile {
   metadata?: Record<string, any> // eslint-disable-line @typescript-eslint/no-explicit-any
 }
 
+export interface TempSlideFile {
+  id: string // UUID
+  originalFilename: string
+  tempFilename: string
+  content: string
+  courseId: string
+  createdAt: string
+  lastModified: string
+}
+
+export interface TempSlideCreateRequest {
+  originalFilename: string
+  content: string
+  courseId: string
+}
+
+export interface TempSlideUpdateRequest {
+  content: string
+}
+
 export interface CourseSlidesFilesResponse {
   course_name: string
   slides: SlideFile[]
@@ -251,6 +271,42 @@ export const api = {
   // Get specific slide file content
   getSlideFileContent: async (courseName: string, filename: string): Promise<SlideFile> => {
     return fetchApi(`/api/slides/courses/${courseName}/file/${filename}`)
+  },
+
+  // Temporary slide file operations for editing
+  // Create a new temporary slide file for editing
+  createTempSlideFile: async (request: TempSlideCreateRequest): Promise<TempSlideFile> => {
+    return fetchApi('/api/slides/temp', {
+      method: 'POST',
+      body: JSON.stringify(request),
+    })
+  },
+
+  // Get temporary slide file content
+  getTempSlideFile: async (tempId: string): Promise<TempSlideFile> => {
+    return fetchApi(`/api/slides/temp/${tempId}`)
+  },
+
+  // Update temporary slide file content
+  updateTempSlideFile: async (tempId: string, request: TempSlideUpdateRequest): Promise<TempSlideFile> => {
+    return fetchApi(`/api/slides/temp/${tempId}`, {
+      method: 'PUT',
+      body: JSON.stringify(request),
+    })
+  },
+
+  // Delete temporary slide file
+  deleteTempSlideFile: async (tempId: string): Promise<{message: string}> => {
+    return fetchApi(`/api/slides/temp/${tempId}`, {
+      method: 'DELETE',
+    })
+  },
+
+  // Commit temporary slide file changes to original file
+  commitTempSlideFile: async (tempId: string): Promise<{message: string}> => {
+    return fetchApi(`/api/slides/temp/${tempId}/commit`, {
+      method: 'POST',
+    })
   }
 }
 

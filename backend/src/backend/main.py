@@ -28,6 +28,9 @@ app.add_middleware(
 COURSES_DIR = Path("courses")
 COURSES_DIR.mkdir(exist_ok=True)
 
+TEMP_SLIDES_DIR = Path("temp_slides")
+TEMP_SLIDES_DIR.mkdir(exist_ok=True)
+
 # Mount static assets directories for courses
 @app.on_event("startup")
 async def startup_event():
@@ -76,6 +79,14 @@ class CourseUpdate(BaseModel):
     tags: Optional[List[str]] = None
 
 class SlidesUpdate(BaseModel):
+    content: str
+
+class TempSlideCreateRequest(BaseModel):
+    originalFilename: str
+    content: str
+    courseId: str
+
+class TempSlideUpdateRequest(BaseModel):
     content: str
 
 class LabContent(BaseModel):
@@ -190,7 +201,11 @@ End of the presentation.
 - Share with your audience
 """
     
-    slides_file = course_path / "slides" / "slides.md"
+    # Create slides directory
+    slides_dir = course_path / "slides"
+    slides_dir.mkdir(exist_ok=True)
+    
+    slides_file = slides_dir / "slides.md"
     async with aiofiles.open(slides_file, 'w', encoding='utf-8') as f:
         await f.write(slides_content)
     
@@ -448,7 +463,7 @@ async def get_slide_file_content(course_name: str, filename: str):
         return {
             "filename": filename,
             "title": title,
-            "content": post.content,
+            "content": content,  # Return raw content including frontmatter
             "html": html_content,
             "metadata": post.metadata
         }
@@ -733,6 +748,161 @@ async def delete_course_asset(course_name: str, path: str):
         return {"message": "Asset deleted successfully"}
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Failed to delete asset: {str(e)}")
+
+# Temporary slide file operations for editing
+@app.post("/api/slides/temp")
+async def create_temp_slide_file(request: TempSlideCreateRequest):
+    """Create a new temporary slide file for editing"""
+    temp_id = str(uuid.uuid4())
+    temp_filename = f"{request.originalFilename.split('.')[0]}-{temp_id}.md"
+    temp_file_path = TEMP_SLIDES_DIR / temp_filename
+    
+    # Save temporary file with initial content
+    async with aiofiles.open(temp_file_path, 'w', encoding='utf-8') as f:
+        await f.write(request.content)
+    
+    # Create metadata file to track the temp file info
+    metadata = {
+        "id": temp_id,
+        "originalFilename": request.originalFilename,
+        "tempFilename": temp_filename,
+        "courseId": request.courseId,
+        "createdAt": str(uuid.uuid1().time),
+        "lastModified": str(uuid.uuid1().time)
+    }
+    
+    metadata_file = TEMP_SLIDES_DIR / f"{temp_id}.json"
+    async with aiofiles.open(metadata_file, 'w', encoding='utf-8') as f:
+        await f.write(json.dumps(metadata, indent=2))
+    
+    return {
+        "id": temp_id,
+        "originalFilename": request.originalFilename,
+        "tempFilename": temp_filename,
+        "content": request.content,
+        "courseId": request.courseId,
+        "createdAt": metadata["createdAt"],
+        "lastModified": metadata["lastModified"]
+    }
+
+@app.get("/api/slides/temp/{temp_id}")
+async def get_temp_slide_file(temp_id: str):
+    """Get temporary slide file content"""
+    metadata_file = TEMP_SLIDES_DIR / f"{temp_id}.json"
+    if not metadata_file.exists():
+        raise HTTPException(status_code=404, detail="Temporary slide file not found")
+    
+    # Read metadata
+    async with aiofiles.open(metadata_file, 'r', encoding='utf-8') as f:
+        metadata = json.loads(await f.read())
+    
+    # Read content
+    temp_file_path = TEMP_SLIDES_DIR / metadata["tempFilename"]
+    if not temp_file_path.exists():
+        raise HTTPException(status_code=404, detail="Temporary slide file content not found")
+    
+    async with aiofiles.open(temp_file_path, 'r', encoding='utf-8') as f:
+        content = await f.read()
+    
+    return {
+        "id": temp_id,
+        "originalFilename": metadata["originalFilename"],
+        "tempFilename": metadata["tempFilename"],
+        "content": content,
+        "courseId": metadata["courseId"],
+        "createdAt": metadata["createdAt"],
+        "lastModified": metadata["lastModified"]
+    }
+
+@app.put("/api/slides/temp/{temp_id}")
+async def update_temp_slide_file(temp_id: str, request: TempSlideUpdateRequest):
+    """Update temporary slide file content"""
+    metadata_file = TEMP_SLIDES_DIR / f"{temp_id}.json"
+    if not metadata_file.exists():
+        raise HTTPException(status_code=404, detail="Temporary slide file not found")
+    
+    # Read metadata
+    async with aiofiles.open(metadata_file, 'r', encoding='utf-8') as f:
+        metadata = json.loads(await f.read())
+    
+    # Update content
+    temp_file_path = TEMP_SLIDES_DIR / metadata["tempFilename"]
+    async with aiofiles.open(temp_file_path, 'w', encoding='utf-8') as f:
+        await f.write(request.content)
+    
+    # Update metadata timestamp
+    metadata["lastModified"] = str(uuid.uuid1().time)
+    async with aiofiles.open(metadata_file, 'w', encoding='utf-8') as f:
+        await f.write(json.dumps(metadata, indent=2))
+    
+    return {
+        "id": temp_id,
+        "originalFilename": metadata["originalFilename"],
+        "tempFilename": metadata["tempFilename"],
+        "content": request.content,
+        "courseId": metadata["courseId"],
+        "createdAt": metadata["createdAt"],
+        "lastModified": metadata["lastModified"]
+    }
+
+@app.delete("/api/slides/temp/{temp_id}")
+async def delete_temp_slide_file(temp_id: str):
+    """Delete temporary slide file"""
+    metadata_file = TEMP_SLIDES_DIR / f"{temp_id}.json"
+    if not metadata_file.exists():
+        raise HTTPException(status_code=404, detail="Temporary slide file not found")
+    
+    # Read metadata to get temp filename
+    async with aiofiles.open(metadata_file, 'r', encoding='utf-8') as f:
+        metadata = json.loads(await f.read())
+    
+    # Delete temp file
+    temp_file_path = TEMP_SLIDES_DIR / metadata["tempFilename"]
+    if temp_file_path.exists():
+        temp_file_path.unlink()
+    
+    # Delete metadata file
+    metadata_file.unlink()
+    
+    return {"message": "Temporary slide file deleted successfully"}
+
+@app.post("/api/slides/temp/{temp_id}/commit")
+async def commit_temp_slide_file(temp_id: str):
+    """Commit temporary slide file changes to original file"""
+    metadata_file = TEMP_SLIDES_DIR / f"{temp_id}.json"
+    if not metadata_file.exists():
+        raise HTTPException(status_code=404, detail="Temporary slide file not found")
+    
+    # Read metadata
+    async with aiofiles.open(metadata_file, 'r', encoding='utf-8') as f:
+        metadata = json.loads(await f.read())
+    
+    # Read temp file content
+    temp_file_path = TEMP_SLIDES_DIR / metadata["tempFilename"]
+    if not temp_file_path.exists():
+        raise HTTPException(status_code=404, detail="Temporary slide file content not found")
+    
+    async with aiofiles.open(temp_file_path, 'r', encoding='utf-8') as f:
+        content = await f.read()
+    
+    # Write to original file
+    course_path = COURSES_DIR / metadata["courseId"]
+    if not course_path.exists():
+        raise HTTPException(status_code=404, detail="Course not found")
+    
+    original_file_path = course_path / "slides" / metadata["originalFilename"]
+    
+    # Ensure slides directory exists
+    (course_path / "slides").mkdir(exist_ok=True)
+    
+    async with aiofiles.open(original_file_path, 'w', encoding='utf-8') as f:
+        await f.write(content)
+    
+    # Clean up temp files
+    temp_file_path.unlink()
+    metadata_file.unlink()
+    
+    return {"message": "Changes committed successfully"}
 
 # Helper functions
 def generate_course_id(title: str) -> str:

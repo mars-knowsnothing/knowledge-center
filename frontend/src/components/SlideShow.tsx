@@ -26,17 +26,45 @@ interface SlideShowProps {
   className?: string
   containerClassName?: string
   isPreview?: boolean
+  globalTheme?: string
+  globalLayout?: string
+  onThemeChange?: (theme: string) => void
+  onLayoutChange?: (layout: string) => void
 }
 
-export default function SlideShow({ slides, currentSlide, onSlideChange, className = '', containerClassName, isPreview = false }: SlideShowProps) {
+export default function SlideShow({ 
+  slides, 
+  currentSlide, 
+  onSlideChange, 
+  className = '', 
+  containerClassName, 
+  isPreview = false,
+  globalTheme,
+  globalLayout,
+  onThemeChange,
+  onLayoutChange
+}: SlideShowProps) {
   const [isFullscreen, setIsFullscreen] = useState(false)
   const [isPlaying, setIsPlaying] = useState(false)
-  const [currentTheme, setCurrentTheme] = useState('minimal')
-  const [currentLayout, setCurrentLayout] = useState('default')
+  const [currentTheme, setCurrentTheme] = useState(globalTheme || 'minimal')
+  const [currentLayout, setCurrentLayout] = useState(globalLayout || 'default')
   const [showThemeSelector, setShowThemeSelector] = useState(false)
   const slideRef = useRef<HTMLDivElement>(null)
   const containerRef = useRef<HTMLDivElement>(null)
   const thumbnailContainerRef = useRef<HTMLDivElement>(null)
+
+  // Sync with external theme and layout changes
+  useEffect(() => {
+    if (globalTheme && globalTheme !== currentTheme) {
+      setCurrentTheme(globalTheme)
+    }
+  }, [globalTheme])
+
+  useEffect(() => {
+    if (globalLayout && globalLayout !== currentLayout) {
+      setCurrentLayout(globalLayout)
+    }
+  }, [globalLayout])
 
   // Auto-advance slides when playing
   useEffect(() => {
@@ -317,8 +345,20 @@ export default function SlideShow({ slides, currentSlide, onSlideChange, classNa
         <ThemeSelector
           currentTheme={currentTheme}
           currentLayout={currentLayout}
-          onThemeChange={setCurrentTheme}
-          onLayoutChange={setCurrentLayout}
+          onThemeChange={(theme) => {
+            setCurrentTheme(theme)
+            // Also notify parent component if callback is provided
+            if (onThemeChange) {
+              onThemeChange(theme)
+            }
+          }}
+          onLayoutChange={(layout) => {
+            setCurrentLayout(layout)
+            // Also notify parent component if callback is provided
+            if (onLayoutChange) {
+              onLayoutChange(layout)
+            }
+          }}
           onClose={() => setShowThemeSelector(false)}
         />
       )}

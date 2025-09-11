@@ -159,13 +159,7 @@ export default function CourseSlidesPage({ params }: { params: Promise<{ courseI
           <div className="text-center py-16">
             <div className="text-6xl mb-4">📄</div>
             <h2 className="text-2xl font-bold text-gray-900 mb-2">No Slides Available</h2>
-            <p className="text-gray-600 mb-6">This course doesn&apos;t have any slide files yet.</p>
-            <Link 
-              href={`/courses/${courseId}/edit`}
-              className="inline-flex items-center px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors"
-            >
-              Create Slides
-            </Link>
+            <p className="text-gray-600">This course doesn&apos;t have any slide files yet. Add slide files to get started.</p>
           </div>
         )}
       </div>

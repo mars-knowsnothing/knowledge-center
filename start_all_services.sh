@@ -6,6 +6,7 @@
 set -e
 
 # Configuration
+SCRIPT_VERSION="2.3.0"
 FRONTEND_PORT=3000
 BACKEND_PORT=8000
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
@@ -102,10 +103,12 @@ cleanup_all() {
     kill_process_on_port $FRONTEND_PORT
     kill_process_on_port $BACKEND_PORT
     
-    # Kill by process name patterns
+    # Kill by process name patterns (updated for correct commands)
     pkill -f "yarn dev" 2>/dev/null || true
+    pkill -f "npm run dev" 2>/dev/null || true
     pkill -f "next-server" 2>/dev/null || true
     pkill -f "uvicorn" 2>/dev/null || true
+    pkill -f "python.*main.py" 2>/dev/null || true
     pkill -f "python.*run.py" 2>/dev/null || true
     pkill -f "node.*next" 2>/dev/null || true
     
@@ -174,20 +177,73 @@ verify_ports_free() {
     log_success "Ports $FRONTEND_PORT and $BACKEND_PORT are available"
 }
 
+# Function to clean cache and prepare backend
+prepare_backend() {
+    log_info "Preparing backend environment..."
+    
+    cd "$PROJECT_ROOT/backend"
+    
+    # Clean Python cache
+    log_info "Cleaning Python cache..."
+    find . -type d -name "__pycache__" -exec rm -rf {} + 2>/dev/null || true
+    find . -name "*.pyc" -delete 2>/dev/null || true
+    find . -name "*.pyo" -delete 2>/dev/null || true
+    
+    # Clean temp slides directory only if it's stale (older than 1 hour)
+    if [ -d "temp_slides" ]; then
+        # Only clean if directory is older than 1 hour (in case of old temp files)
+        local temp_slides_age
+        if [ "$(uname)" = "Darwin" ]; then
+            # macOS date command
+            temp_slides_age=$(( $(date +%s) - $(stat -f %m temp_slides 2>/dev/null || echo 0) ))
+        else
+            # Linux date command
+            temp_slides_age=$(( $(date +%s) - $(stat -c %Y temp_slides 2>/dev/null || echo 0) ))
+        fi
+        
+        # Clean if directory is older than 1 hour (3600 seconds) or if forced
+        if [ "$FORCE_CLEAN_TEMP" = "true" ] || [ "$temp_slides_age" -gt 3600 ]; then
+            log_info "Cleaning stale temporary slides..."
+            rm -rf temp_slides/*
+        else
+            log_info "Preserving recent temporary slides..."
+        fi
+    fi
+    
+    # Remove any package-lock.json that might have been created
+    if [ -f "../frontend/package-lock.json" ]; then
+        log_info "Removing conflicting package-lock.json..."
+        rm -f "../frontend/package-lock.json"
+    fi
+    
+    # Smart dependency management
+    if [ ! -d ".venv" ]; then
+        log_warning "Virtual environment not found, creating..."
+        uv sync
+    elif [ "$FORCE_SYNC" = "true" ]; then
+        log_info "Force syncing backend dependencies..."
+        uv sync
+    else
+        # Check if pyproject.toml is newer than .venv
+        if [ "pyproject.toml" -nt ".venv" ] || [ "uv.lock" -nt ".venv" ]; then
+            log_info "Dependencies updated, syncing..."
+            uv sync
+        else
+            log_info "Backend dependencies are up to date"
+        fi
+    fi
+    
+    log_success "Backend environment prepared"
+}
+
 # Function to start backend service
 start_backend() {
     log_info "Starting FastAPI backend on port $BACKEND_PORT..."
     
     cd "$PROJECT_ROOT/backend"
     
-    # Check if virtual environment exists
-    if [ ! -d ".venv" ]; then
-        log_warning "Virtual environment not found, creating..."
-        uv sync
-    fi
-    
-    # Start backend in background
-    nohup uv run python run.py > "$PROJECT_ROOT/backend.log" 2>&1 &
+    # Start backend in background (using uvicorn for better development experience)
+    nohup uv run uvicorn src.backend.main:app --reload --host 0.0.0.0 --port $BACKEND_PORT > "$PROJECT_ROOT/backend.log" 2>&1 &
     local backend_pid=$!
     echo $backend_pid > "$PROJECT_ROOT/backend.pid"
     
@@ -211,17 +267,61 @@ start_backend() {
     return 1
 }
 
+# Function to clean cache and prepare frontend
+prepare_frontend() {
+    log_info "Preparing frontend environment..."
+    
+    cd "$PROJECT_ROOT/frontend"
+    
+    # Always clean build cache for fresh development experience
+    log_info "Cleaning Next.js build cache..."
+    rm -rf .next 2>/dev/null || true
+    rm -rf .next/cache 2>/dev/null || true
+    
+    # Clean TypeScript cache
+    log_info "Cleaning TypeScript cache..."
+    rm -rf .tsbuildinfo 2>/dev/null || true
+    
+    # Remove any package-lock.json that might have been created
+    if [ -f "package-lock.json" ]; then
+        log_info "Removing conflicting package-lock.json..."
+        rm -f package-lock.json
+    fi
+    
+    # Smart dependency management
+    if [ ! -d "node_modules" ]; then
+        log_warning "Node modules not found, installing..."
+        yarn install
+    elif [ "$CLEAN_NODE_MODULES" = "true" ]; then
+        log_info "Force cleaning node_modules..."
+        rm -rf node_modules
+        yarn install
+    elif [ "$FORCE_SYNC" = "true" ]; then
+        log_info "Force installing dependencies..."
+        yarn install
+    else
+        # Check if package files are newer than node_modules
+        if [ "package.json" -nt "node_modules" ] || [ "yarn.lock" -nt "node_modules" ]; then
+            log_info "Dependencies updated, installing..."
+            yarn install
+        else
+            log_info "Frontend dependencies are up to date"
+            # Quick verification without full reinstall
+            if ! yarn check --silent 2>/dev/null; then
+                log_warning "Dependency integrity check failed, reinstalling..."
+                yarn install
+            fi
+        fi
+    fi
+    
+    log_success "Frontend environment prepared"
+}
+
 # Function to start frontend service
 start_frontend() {
     log_info "Starting NextJS frontend on port $FRONTEND_PORT..."
     
     cd "$PROJECT_ROOT/frontend"
-    
-    # Check if node_modules exists
-    if [ ! -d "node_modules" ]; then
-        log_warning "Node modules not found, installing..."
-        yarn install
-    fi
     
     # Start frontend in background
     nohup yarn dev > "$PROJECT_ROOT/frontend.log" 2>&1 &
@@ -291,10 +391,77 @@ cleanup_on_exit() {
     exit 0
 }
 
+# Function to show usage
+show_usage() {
+    echo "Usage: $0 [OPTIONS]"
+    echo ""
+    echo "Options:"
+    echo "  --clean-all         Clean all cache and force reinstall dependencies"
+    echo "  --clean-cache       Clean only build cache, smart dependency check (default)"
+    echo "  --force-sync        Force sync/install dependencies even if up to date"
+    echo "  --help              Show this help message"
+    echo ""
+    echo "Environment Variables:"
+    echo "  CLEAN_NODE_MODULES  Set to 'true' to force clean node_modules"
+    echo "  FORCE_SYNC          Set to 'true' to force dependency sync"
+    echo "  FORCE_CLEAN_TEMP    Set to 'true' to force clean temp_slides directory"
+    echo ""
+    echo "Examples:"
+    echo "  $0                        # Smart start (clean build cache, check deps)"
+    echo "  $0 --clean-all           # Full cleanup with dependency reinstall"
+    echo "  $0 --force-sync          # Force dependency sync"
+    echo "  FORCE_SYNC=true $0       # Environment variable control"
+    echo ""
+    echo "Strategy:"
+    echo "  - Build cache (.next, __pycache__) is ALWAYS cleaned for fresh start"
+    echo "  - Dependencies are only updated when package files change"
+    echo "  - package-lock.json files are automatically removed to ensure yarn/uv usage"
+    echo "  - Backend uses uvicorn with reload for better development experience"
+    echo "  - Use --clean-all or --force-sync when dependency issues occur"
+}
+
 # Main execution
 main() {
-    echo "🚀 Training System v2 - Service Manager"
-    echo "======================================"
+    # Parse command line arguments
+    while [[ $# -gt 0 ]]; do
+        case $1 in
+            --clean-all)
+                export CLEAN_NODE_MODULES=true
+                export FORCE_SYNC=true
+                shift
+                ;;
+            --clean-cache)
+                # This is the default behavior - only clean build cache
+                shift
+                ;;
+            --force-sync)
+                export FORCE_SYNC=true
+                shift
+                ;;
+            --help)
+                show_usage
+                exit 0
+                ;;
+            *)
+                log_error "Unknown option: $1"
+                show_usage
+                exit 1
+                ;;
+        esac
+    done
+
+    echo "🚀 Training System v2 - Service Manager (v$SCRIPT_VERSION)"
+    echo "========================================================"
+    log_info "Package Management: Frontend (yarn) + Backend (uv)"
+    
+    # Show startup mode
+    if [ "$CLEAN_NODE_MODULES" = "true" ]; then
+        log_info "Mode: Full cleanup (cache + node_modules)"
+    elif [ "$FORCE_SYNC" = "true" ]; then
+        log_info "Mode: Force sync (cache + forced dependency install)"
+    else
+        log_info "Mode: Smart start (cache cleanup + dependency check)"
+    fi
     
     # Set up interrupt handler
     trap cleanup_on_exit INT TERM
@@ -310,6 +477,10 @@ main() {
         log_error "Unable to free required ports. Exiting."
         exit 1
     fi
+    
+    # Prepare environments
+    prepare_backend
+    prepare_frontend
     
     # Start services
     cd "$SCRIPT_DIR"
