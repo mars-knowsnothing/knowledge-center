@@ -904,6 +904,131 @@ async def commit_temp_slide_file(temp_id: str):
     
     return {"message": "Changes committed successfully"}
 
+@app.post("/api/courses/{course_name}/labs/upload")
+async def upload_course_lab(course_name: str, file: UploadFile = File(...)):
+    """Upload a lab file to a course"""
+    course_path = COURSES_DIR / course_name
+    if not course_path.exists():
+        raise HTTPException(status_code=404, detail="Course not found")
+    
+    # Validate file extension
+    if not file.filename or not file.filename.endswith('.md'):
+        raise HTTPException(status_code=400, detail="Only markdown (.md) files are allowed for labs")
+    
+    labs_dir = course_path / "labs"
+    labs_dir.mkdir(exist_ok=True)
+    
+    # Sanitize filename
+    safe_filename = re.sub(r'[^a-zA-Z0-9\-_\.]', '_', file.filename)
+    file_path = labs_dir / safe_filename
+    
+    # Check if file already exists and add number suffix if needed
+    counter = 1
+    original_stem = file_path.stem
+    original_suffix = file_path.suffix
+    while file_path.exists():
+        file_path = labs_dir / f"{original_stem}_{counter}{original_suffix}"
+        counter += 1
+    
+    # Save the file
+    try:
+        async with aiofiles.open(file_path, 'wb') as f:
+            content = await file.read()
+            await f.write(content)
+        
+        # Parse the markdown file to get lab info
+        async with aiofiles.open(file_path, 'r', encoding='utf-8') as f:
+            md_content = await f.read()
+        
+        post = frontmatter.loads(md_content)
+        md = markdown.Markdown(extensions=['codehilite', 'fenced_code', 'tables'])
+        html_content = md.convert(post.content)
+        
+        # Extract chapter number from filename or metadata
+        chapter = post.metadata.get('chapter', 1)
+        if isinstance(chapter, str):
+            try:
+                chapter = int(chapter)
+            except ValueError:
+                chapter = 1
+        
+        title = post.metadata.get('title', file_path.stem)
+        
+        return {
+            "message": "Lab file uploaded successfully",
+            "lab": {
+                "filename": file_path.name,
+                "chapter": chapter,
+                "title": title,
+                "content": post.content,
+                "html": html_content,
+                "course_name": course_name
+            }
+        }
+    except Exception as e:
+        # Clean up file if there was an error
+        if file_path.exists():
+            file_path.unlink()
+        raise HTTPException(status_code=500, detail=f"Failed to upload lab file: {str(e)}")
+
+@app.post("/api/courses/{course_name}/slides/upload")
+async def upload_course_slides(course_name: str, file: UploadFile = File(...)):
+    """Upload a markdown slide file to a course"""
+    course_path = COURSES_DIR / course_name
+    if not course_path.exists():
+        raise HTTPException(status_code=404, detail="Course not found")
+    
+    # Validate file extension
+    if not file.filename or not file.filename.endswith('.md'):
+        raise HTTPException(status_code=400, detail="Only markdown (.md) files are allowed for slides")
+    
+    slides_dir = course_path / "slides"
+    slides_dir.mkdir(exist_ok=True)
+    
+    # Sanitize filename
+    safe_filename = re.sub(r'[^a-zA-Z0-9\-_\.]', '_', file.filename)
+    file_path = slides_dir / safe_filename
+    
+    # Check if file already exists and add number suffix if needed
+    counter = 1
+    original_stem = file_path.stem
+    original_suffix = file_path.suffix
+    while file_path.exists():
+        file_path = slides_dir / f"{original_stem}_{counter}{original_suffix}"
+        counter += 1
+    
+    # Save the file
+    try:
+        async with aiofiles.open(file_path, 'wb') as f:
+            content = await file.read()
+            await f.write(content)
+        
+        # Parse the markdown file to get slide info
+        async with aiofiles.open(file_path, 'r', encoding='utf-8') as f:
+            md_content = await f.read()
+        
+        post = frontmatter.loads(md_content)
+        md = markdown.Markdown(extensions=['codehilite', 'fenced_code', 'tables'])
+        html_content = md.convert(post.content)
+        
+        title = post.metadata.get('title', file_path.stem)
+        
+        return {
+            "message": "Slide file uploaded successfully",
+            "slide_file": {
+                "filename": file_path.name,
+                "title": title,
+                "content": post.content,
+                "html": html_content,
+                "metadata": post.metadata
+            }
+        }
+    except Exception as e:
+        # Clean up file if there was an error
+        if file_path.exists():
+            file_path.unlink()
+        raise HTTPException(status_code=500, detail=f"Failed to upload slide file: {str(e)}")
+
 # Helper functions
 def generate_course_id(title: str) -> str:
     # Convert title to URL-friendly ID

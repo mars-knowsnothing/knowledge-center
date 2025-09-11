@@ -2,8 +2,10 @@
 
 import Layout from "@/components/Layout"
 import CourseForm from "@/components/CourseForm"
+import ConfirmModal from "@/components/ConfirmModal"
+import Notification from "@/components/Notification"
 import Link from "next/link"
-import { BookOpenIcon, ClockIcon, UserIcon, PlusIcon } from "@heroicons/react/24/outline"
+import { BookOpenIcon, ClockIcon, UserIcon, PlusIcon, TrashIcon } from "@heroicons/react/24/outline"
 import { useState, useEffect } from "react"
 import { api, Course, ApiError } from "@/lib/api"
 
@@ -12,6 +14,18 @@ export default function CoursesPage() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [showCreateForm, setShowCreateForm] = useState(false)
+  const [showDeleteModal, setShowDeleteModal] = useState(false)
+  const [courseToDelete, setCourseToDelete] = useState<Course | null>(null)
+  const [notification, setNotification] = useState<{
+    show: boolean
+    type: 'success' | 'error' | 'warning' | 'info'
+    title: string
+    message?: string
+  }>({
+    show: false,
+    type: 'success',
+    title: ''
+  })
 
   const fetchCourses = async () => {
     try {
@@ -37,6 +51,43 @@ export default function CoursesPage() {
   const handleCreateSuccess = () => {
     setShowCreateForm(false)
     fetchCourses() // Refresh the courses list
+  }
+
+  const showNotification = (type: 'success' | 'error' | 'warning' | 'info', title: string, message?: string) => {
+    setNotification({
+      show: true,
+      type,
+      title,
+      message
+    })
+  }
+
+  const hideNotification = () => {
+    setNotification(prev => ({ ...prev, show: false }))
+  }
+
+  const handleDeleteCourse = (course: Course) => {
+    setCourseToDelete(course)
+    setShowDeleteModal(true)
+  }
+
+  const confirmDeleteCourse = async () => {
+    if (!courseToDelete) return
+
+    try {
+      await api.deleteCourse(courseToDelete.id)
+      setCourses(courses.filter(course => course.id !== courseToDelete.id))
+      showNotification('success', 'Course deleted successfully', `"${courseToDelete.title}" has been permanently deleted.`)
+    } catch (err) {
+      console.error('Error deleting course:', err)
+      if (err instanceof ApiError) {
+        showNotification('error', 'Failed to delete course', err.message)
+      } else {
+        showNotification('error', 'Failed to delete course', 'An unexpected error occurred.')
+      }
+    } finally {
+      setCourseToDelete(null)
+    }
   }
 
   if (loading) {
@@ -144,22 +195,32 @@ export default function CoursesPage() {
                     )}
                   </div>
                 </div>
-                <div className="ml-2">
+                <div className="ml-2 flex items-center gap-1">
                   <BookOpenIcon className="h-5 w-5 text-blue-500" />
+                  <button
+                    onClick={(e) => {
+                      e.preventDefault()
+                      handleDeleteCourse(course)
+                    }}
+                    className="p-1 text-gray-400 hover:text-red-500 transition-colors"
+                    title="Delete course"
+                  >
+                    <TrashIcon className="h-4 w-4" />
+                  </button>
                 </div>
               </div>
               <div className="flex gap-2 mt-auto">
                 <Link 
-                  href={`/courses/${course.id}`}
+                  href={`/courses/${course.id}/slides?present=true`}
                   className="flex-1 inline-flex items-center justify-center px-2 py-1 bg-blue-600 text-white rounded text-xs hover:bg-blue-700 transition-colors"
                 >
-                  View Course
+                  Present
                 </Link>
                 <Link 
-                  href={`/courses/${course.id}/slides`}
+                  href={`/courses/${course.id}`}
                   className="flex-1 inline-flex items-center justify-center px-2 py-1 border border-gray-300 text-gray-700 rounded text-xs hover:bg-gray-50 transition-colors"
                 >
-                  Slides
+                  Manage
                 </Link>
               </div>
             </div>
@@ -184,6 +245,30 @@ export default function CoursesPage() {
             onSuccess={handleCreateSuccess}
           />
         )}
+
+        {/* Delete Confirmation Modal */}
+        <ConfirmModal
+          isOpen={showDeleteModal}
+          onClose={() => {
+            setShowDeleteModal(false)
+            setCourseToDelete(null)
+          }}
+          onConfirm={confirmDeleteCourse}
+          title="Delete Course"
+          message={courseToDelete ? `Are you sure you want to delete "${courseToDelete.title}"? This will permanently delete all slides, labs, and assets. This action cannot be undone.` : ''}
+          confirmText="Delete"
+          cancelText="Cancel"
+          type="danger"
+        />
+
+        {/* Notification */}
+        <Notification
+          show={notification.show}
+          onClose={hideNotification}
+          title={notification.title}
+          message={notification.message}
+          type={notification.type}
+        />
       </div>
     </Layout>
   )

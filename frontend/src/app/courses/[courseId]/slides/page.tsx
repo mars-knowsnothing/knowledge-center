@@ -5,10 +5,13 @@ import { useState, useEffect, use } from "react"
 import { api, Course, SlideFile, ApiError } from "@/lib/api"
 import Link from "next/link"
 import { ArrowLeftIcon } from '@heroicons/react/24/outline'
+import { useSearchParams, useRouter } from "next/navigation"
 
 export default function CourseSlidesPage({ params }: { params: Promise<{ courseId: string }> }) {
   // Unwrap params Promise using React.use()
   const { courseId } = use(params)
+  const searchParams = useSearchParams()
+  const router = useRouter()
   
   const [course, setCourse] = useState<Course | null>(null)
   const [slideFiles, setSlideFiles] = useState<SlideFile[]>([])
@@ -29,6 +32,14 @@ export default function CourseSlidesPage({ params }: { params: Promise<{ courseI
 
         setCourse(courseData)
         setSlideFiles(slideFilesData.slides || [])
+
+        // Check if we should auto-present the first slide
+        const shouldPresent = searchParams.get('present') === 'true'
+        if (shouldPresent && slideFilesData.slides && slideFilesData.slides.length > 0) {
+          const firstSlide = slideFilesData.slides[0]
+          router.push(`/courses/${courseId}/slides/${firstSlide.filename}?mode=presentation`)
+          return
+        }
       } catch (err) {
         if (err instanceof ApiError) {
           setError(err.status === 404 ? 'Course not found' : err.message)
@@ -42,7 +53,7 @@ export default function CourseSlidesPage({ params }: { params: Promise<{ courseI
     }
 
     fetchCourseData()
-  }, [courseId])
+  }, [courseId, searchParams, router])
 
   if (loading) {
     return (

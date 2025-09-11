@@ -307,6 +307,40 @@ export const api = {
     return fetchApi(`/api/slides/temp/${tempId}/commit`, {
       method: 'POST',
     })
+  },
+
+  // Upload lab file to a course
+  uploadCourseLab: async (courseName: string, file: File): Promise<{message: string, lab: Lab}> => {
+    const formData = new FormData()
+    formData.append('file', file)
+    
+    const response = await fetch(`${API_BASE_URL}/api/courses/${courseName}/labs/upload`, {
+      method: 'POST',
+      body: formData,
+    })
+
+    if (!response.ok) {
+      throw new ApiError(response.status, `HTTP error! status: ${response.status}`)
+    }
+
+    return await response.json()
+  },
+
+  // Upload slide file to a course
+  uploadCourseSlides: async (courseName: string, file: File): Promise<{message: string, slide_file: SlideFile}> => {
+    const formData = new FormData()
+    formData.append('file', file)
+    
+    const response = await fetch(`${API_BASE_URL}/api/courses/${courseName}/slides/upload`, {
+      method: 'POST',
+      body: formData,
+    })
+
+    if (!response.ok) {
+      throw new ApiError(response.status, `HTTP error! status: ${response.status}`)
+    }
+
+    return await response.json()
   }
 }
 

@@ -1,6 +1,7 @@
 'use client'
 
 import Layout from "@/components/Layout"
+import Notification from "@/components/Notification"
 import Link from "next/link"
 import { useState, useEffect, use } from "react"
 import { api, Course, Asset, Lab, SlideFile, ApiError } from "@/lib/api"
@@ -24,6 +25,18 @@ export default function CourseDetailPage({ params }: { params: Promise<{ courseI
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [uploadingAsset, setUploadingAsset] = useState(false)
+  const [uploadingLab, setUploadingLab] = useState(false)
+  const [uploadingSlides, setUploadingSlides] = useState(false)
+  const [notification, setNotification] = useState<{
+    show: boolean
+    type: 'success' | 'error' | 'warning' | 'info'
+    title: string
+    message?: string
+  }>({
+    show: false,
+    type: 'success',
+    title: ''
+  })
 
   useEffect(() => {
     async function fetchCourseData() {
@@ -58,6 +71,19 @@ export default function CourseDetailPage({ params }: { params: Promise<{ courseI
     fetchCourseData()
   }, [courseId])
 
+  const showNotification = (type: 'success' | 'error' | 'warning' | 'info', title: string, message?: string) => {
+    setNotification({
+      show: true,
+      type,
+      title,
+      message
+    })
+  }
+
+  const hideNotification = () => {
+    setNotification(prev => ({ ...prev, show: false }))
+  }
+
   const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0]
     if (!file) return
@@ -68,9 +94,10 @@ export default function CourseDetailPage({ params }: { params: Promise<{ courseI
       setAssets([...assets, result.asset])
       // Reset file input
       event.target.value = ''
+      showNotification('success', 'Asset uploaded successfully', `"${file.name}" has been uploaded.`)
     } catch (err) {
       console.error('Error uploading asset:', err)
-      alert('Failed to upload asset')
+      showNotification('error', 'Failed to upload asset', 'An error occurred while uploading the file.')
     } finally {
       setUploadingAsset(false)
     }
@@ -85,6 +112,54 @@ export default function CourseDetailPage({ params }: { params: Promise<{ courseI
     } catch (err) {
       console.error('Error deleting asset:', err)
       alert('Failed to delete asset')
+    }
+  }
+
+  const handleLabUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0]
+    if (!file) return
+
+    if (!file.name.endsWith('.md')) {
+      showNotification('warning', 'Invalid file type', 'Only markdown (.md) files are allowed for labs.')
+      return
+    }
+
+    setUploadingLab(true)
+    try {
+      const result = await api.uploadCourseLab(courseId, file)
+      setLabs([...labs, result.lab])
+      // Reset file input
+      event.target.value = ''
+      showNotification('success', 'Lab uploaded successfully', `"${file.name}" has been uploaded.`)
+    } catch (err) {
+      console.error('Error uploading lab:', err)
+      showNotification('error', 'Failed to upload lab file', 'An error occurred while uploading the lab file.')
+    } finally {
+      setUploadingLab(false)
+    }
+  }
+
+  const handleSlidesUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0]
+    if (!file) return
+
+    if (!file.name.endsWith('.md')) {
+      showNotification('warning', 'Invalid file type', 'Only markdown (.md) files are allowed for slides.')
+      return
+    }
+
+    setUploadingSlides(true)
+    try {
+      const result = await api.uploadCourseSlides(courseId, file)
+      setSlideFiles([...slideFiles, result.slide_file])
+      // Reset file input
+      event.target.value = ''
+      showNotification('success', 'Slide file uploaded successfully', `"${file.name}" has been uploaded.`)
+    } catch (err) {
+      console.error('Error uploading slides:', err)
+      showNotification('error', 'Failed to upload slide file', 'An error occurred while uploading the slide file.')
+    } finally {
+      setUploadingSlides(false)
     }
   }
 
@@ -160,9 +235,31 @@ export default function CourseDetailPage({ params }: { params: Promise<{ courseI
 
         {/* Slides Section */}
         <div className="mb-12">
-          <div className="flex items-center gap-2 mb-4">
-            <DocumentTextIcon className="h-6 w-6 text-blue-600" />
-            <h2 className="text-2xl font-semibold text-gray-900">Slides</h2>
+          <div className="flex items-center justify-between mb-4">
+            <div className="flex items-center gap-2">
+              <DocumentTextIcon className="h-6 w-6 text-blue-600" />
+              <h2 className="text-2xl font-semibold text-gray-900">Slides</h2>
+            </div>
+            <div>
+              <input
+                type="file"
+                id="slides-upload"
+                className="hidden"
+                accept=".md"
+                onChange={handleSlidesUpload}
+                disabled={uploadingSlides}
+              />
+              <label
+                htmlFor="slides-upload"
+                className={`inline-flex items-center justify-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white w-40 ${
+                  uploadingSlides 
+                    ? 'bg-gray-400 cursor-not-allowed' 
+                    : 'bg-blue-600 hover:bg-blue-700 cursor-pointer'
+                } transition-colors`}
+              >
+                {uploadingSlides ? 'Uploading...' : '+ Upload Slides'}
+              </label>
+            </div>
           </div>
           {slideFiles.length > 0 ? (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 max-h-96 overflow-y-auto">
@@ -227,9 +324,31 @@ export default function CourseDetailPage({ params }: { params: Promise<{ courseI
 
         {/* Labs Section */}
         <div className="mb-12">
-          <div className="flex items-center gap-2 mb-4">
-            <BeakerIcon className="h-6 w-6 text-green-600" />
-            <h2 className="text-2xl font-semibold text-gray-900">Labs</h2>
+          <div className="flex items-center justify-between mb-4">
+            <div className="flex items-center gap-2">
+              <BeakerIcon className="h-6 w-6 text-green-600" />
+              <h2 className="text-2xl font-semibold text-gray-900">Labs</h2>
+            </div>
+            <div>
+              <input
+                type="file"
+                id="lab-upload"
+                className="hidden"
+                accept=".md"
+                onChange={handleLabUpload}
+                disabled={uploadingLab}
+              />
+              <label
+                htmlFor="lab-upload"
+                className={`inline-flex items-center justify-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white w-40 ${
+                  uploadingLab 
+                    ? 'bg-gray-400 cursor-not-allowed' 
+                    : 'bg-green-600 hover:bg-green-700 cursor-pointer'
+                } transition-colors`}
+              >
+                {uploadingLab ? 'Uploading...' : '+ Upload Labs'}
+              </label>
+            </div>
           </div>
           {labs.length > 0 ? (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 max-h-96 overflow-y-auto">
@@ -304,13 +423,13 @@ export default function CourseDetailPage({ params }: { params: Promise<{ courseI
               />
               <label
                 htmlFor="asset-upload"
-                className={`inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white ${
+                className={`inline-flex items-center justify-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white w-40 ${
                   uploadingAsset 
                     ? 'bg-gray-400 cursor-not-allowed' 
                     : 'bg-indigo-600 hover:bg-indigo-700 cursor-pointer'
                 } transition-colors`}
               >
-                {uploadingAsset ? 'Uploading...' : '+ Upload Asset'}
+                {uploadingAsset ? 'Uploading...' : '+ Upload Assets'}
               </label>
             </div>
           </div>
@@ -379,6 +498,15 @@ export default function CourseDetailPage({ params }: { params: Promise<{ courseI
             </div>
           )}
         </div>
+
+        {/* Notification */}
+        <Notification
+          show={notification.show}
+          onClose={hideNotification}
+          title={notification.title}
+          message={notification.message}
+          type={notification.type}
+        />
       </div>
     </Layout>
   )

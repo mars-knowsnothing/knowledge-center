@@ -3,7 +3,7 @@ layout: section
 theme: tech
 ---
 
-# 🤖 Claude Code 基础教程 101
+# 🤖 Claude Code 基础教程
 
 ## Anthropic 官方 AI 编程助手
 
