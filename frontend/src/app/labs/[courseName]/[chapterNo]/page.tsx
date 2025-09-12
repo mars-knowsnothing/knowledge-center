@@ -162,6 +162,15 @@ export default function LabDetailPage({ params }: PageProps) {
           </Link>
 
           <div className="flex items-center space-x-3">
+            {/* Edit Button */}
+            <Link
+              href={`/labs/${courseName}/${chapterNo}/edit`}
+              className="inline-flex items-center px-4 py-2 text-sm font-medium text-blue-700 bg-blue-50 border border-blue-200 rounded-lg hover:bg-blue-100 transition-colors duration-200"
+            >
+              <DocumentTextIcon className="mr-2 h-4 w-4" />
+              Edit Lab
+            </Link>
+            
             <button className="inline-flex items-center px-4 py-2 text-sm font-medium text-green-700 bg-green-50 border border-green-200 rounded-lg hover:bg-green-100 transition-colors duration-200">
               <CheckCircleIcon className="mr-2 h-4 w-4" />
               Mark Complete

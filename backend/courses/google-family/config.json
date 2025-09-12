@@ -1,0 +1,41 @@
+{
+  "id": "google-family",
+  "title": "Google AI 工具全家桶",
+  "description": "全面介绍 Google 最新AI工具生态系统，包括视频生成、图像理解、研究助手和代码辅助等前沿AI技术的功能特性和实际应用。",
+  "level": "Intermediate",
+  "duration": "3 小时",
+  "author": "AI 教程团队",
+  "version": "1.0.0",
+  "features": [
+    "Google Veo 视频生成技术",
+    "Gemini 2.5 图像理解能力",
+    "NotebookLM 研究与写作助手",
+    "Jules 代码辅助工具",
+    "实际应用场景演示",
+    "最佳实践指南"
+  ],
+  "tags": [
+    "google-ai",
+    "video-generation",
+    "image-understanding",
+    "research-assistant",
+    "code-assistant",
+    "artificial-intelligence",
+    "machine-learning",
+    "content-creation"
+  ],
+  "requirements": [
+    "Google 账户",
+    "基本 AI 概念理解",
+    "内容创作或开发经验",
+    "互联网连接"
+  ],
+  "learning_outcomes": [
+    "掌握 Google Veo 视频生成的核心功能",
+    "了解 Gemini 2.5 图像分析能力",
+    "学会使用 NotebookLM 进行研究和写作",
+    "熟悉 Jules 代码辅助功能",
+    "理解各工具在实际工作中的应用",
+    "掌握Google AI工具的最佳实践"
+  ]
+}

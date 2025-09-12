@@ -173,6 +173,28 @@ body {
 .markdown-content .codehilite .nt { color: #f59e0b; } /* HTML Tags */
 .markdown-content .codehilite .na { color: #3b82f6; } /* HTML Attributes */
 
+/* Header links for blog posts */
+.markdown-content .header-link {
+  opacity: 0;
+  margin-left: 0.5rem;
+  color: #9ca3af;
+  text-decoration: none;
+  transition: opacity 0.2s ease;
+}
+
+.markdown-content h1:hover .header-link,
+.markdown-content h2:hover .header-link,
+.markdown-content h3:hover .header-link,
+.markdown-content h4:hover .header-link,
+.markdown-content h5:hover .header-link,
+.markdown-content h6:hover .header-link {
+  opacity: 1;
+}
+
+.markdown-content .header-link:hover {
+  color: #374151;
+}
+
 /* Hide scrollbar for thumbnail navigation */
 .scrollbar-hide {
   -ms-overflow-style: none;  /* IE and Edge */

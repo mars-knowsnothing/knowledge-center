@@ -7,7 +7,7 @@ import {
   XMarkIcon,
   HomeIcon,
   BookOpenIcon,
-  CogIcon,
+  DocumentTextIcon,
   BeakerIcon
 } from '@heroicons/react/24/outline'
 
@@ -48,7 +48,7 @@ const navigation = [
   { name: 'Dashboard', href: '/', icon: HomeIcon },
   { name: 'Courses', href: '/courses', icon: BookOpenIcon },
   { name: 'Labs', href: '/labs', icon: BeakerIcon },
-  { name: 'Settings', href: '/settings', icon: CogIcon },
+  { name: 'Blogs', href: '/blogs', icon: DocumentTextIcon },
 ]
 
 export default function Layout({ children }: LayoutProps) {

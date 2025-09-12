@@ -29,7 +29,7 @@ export default function SlideViewPage({
 
         const [courseData, slides] = await Promise.all([
           api.getCourse(courseId),
-          api.getCourseSlides(courseId)
+          api.getSpecificSlideFilePresentation(courseId, filename)
         ])
 
         setCourse(courseData)
@@ -48,7 +48,7 @@ export default function SlideViewPage({
     }
 
     fetchPresentationData()
-  }, [courseId])
+  }, [courseId, filename])
 
   if (loading) {
     return (

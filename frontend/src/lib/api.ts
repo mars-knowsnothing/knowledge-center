@@ -84,6 +84,33 @@ export interface CourseAssetsResponse {
   assets: Asset[]
 }
 
+export interface BlogConfig {
+  slug: string
+  title: string
+  description: string
+  author: string
+  publishDate: string
+  lastModified: string
+  tags: string[]
+  category: string
+  featured: boolean
+  draft: boolean
+  readingTime: string
+  coverImage?: string
+  excerpt: string
+}
+
+export interface BlogPost {
+  config: BlogConfig
+  content: string
+  html: string
+  metadata?: Record<string, any> // eslint-disable-line @typescript-eslint/no-explicit-any
+}
+
+export interface BlogsResponse {
+  blogs: BlogConfig[]
+}
+
 export interface SlideFile {
   filename: string
   title: string
@@ -102,6 +129,15 @@ export interface TempSlideFile {
   lastModified: string
 }
 
+export interface TempLabFile {
+  id: string // UUID
+  originalFilename: string
+  tempFilename: string
+  content: string
+  courseId: string
+  createdAt: string
+}
+
 export interface TempSlideCreateRequest {
   originalFilename: string
   content: string
@@ -109,6 +145,16 @@ export interface TempSlideCreateRequest {
 }
 
 export interface TempSlideUpdateRequest {
+  content: string
+}
+
+export interface TempLabCreateRequest {
+  originalFilename: string
+  content: string
+  courseId: string
+}
+
+export interface TempLabUpdateRequest {
   content: string
 }
 
@@ -164,6 +210,11 @@ export const api = {
   // Get course slides
   getCourseSlides: async (courseId: string): Promise<CourseSlides> => {
     return fetchApi(`/api/courses/${courseId}/slides`)
+  },
+
+  // Get specific slide file as presentation
+  getSpecificSlideFilePresentation: async (courseId: string, filename: string): Promise<CourseSlides> => {
+    return fetchApi(`/api/courses/${courseId}/slides/${filename}`)
   },
 
   // Create new course
@@ -341,6 +392,53 @@ export const api = {
     }
 
     return await response.json()
+  },
+
+  // Temporary lab file operations for editing
+  // Create a new temporary lab file for editing
+  createTempLabFile: async (request: TempLabCreateRequest): Promise<TempLabFile> => {
+    return fetchApi('/api/labs/temp', {
+      method: 'POST',
+      body: JSON.stringify(request),
+    })
+  },
+
+  // Get temporary lab file content
+  getTempLabFile: async (tempId: string): Promise<TempLabFile> => {
+    return fetchApi(`/api/labs/temp/${tempId}`)
+  },
+
+  // Update temporary lab file content
+  updateTempLabFile: async (tempId: string, request: TempLabUpdateRequest): Promise<{message: string}> => {
+    return fetchApi(`/api/labs/temp/${tempId}`, {
+      method: 'PUT',
+      body: JSON.stringify(request),
+    })
+  },
+
+  // Delete temporary lab file
+  deleteTempLabFile: async (tempId: string): Promise<{message: string}> => {
+    return fetchApi(`/api/labs/temp/${tempId}`, {
+      method: 'DELETE',
+    })
+  },
+
+  // Commit temporary lab file changes to original file
+  commitTempLabFile: async (tempId: string): Promise<{message: string}> => {
+    return fetchApi(`/api/labs/temp/${tempId}/commit`, {
+      method: 'POST',
+    })
+  },
+
+  // Blogs API
+  // Get all blog posts
+  getBlogs: async (): Promise<BlogsResponse> => {
+    return fetchApi('/api/blogs')
+  },
+
+  // Get specific blog post
+  getBlogPost: async (slug: string): Promise<BlogPost> => {
+    return fetchApi(`/api/blogs/${slug}`)
   }
 }
 

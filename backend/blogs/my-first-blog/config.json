@@ -1,0 +1,15 @@
+{
+  "slug": "my-first-blog",
+  "title": "我的第一篇博客",
+  "description": "这是我在Knowledge Center发布的第一篇博客文章，介绍如何开始使用我们的平台。",
+  "author": "知识中心团队",
+  "publishDate": "2024-09-12",
+  "lastModified": "2024-09-12",
+  "tags": ["入门", "教程", "知识中心"],
+  "category": "教程",
+  "featured": true,
+  "draft": false,
+  "readingTime": "5分钟",
+  "coverImage": "cover.jpg",
+  "excerpt": "欢迎来到Knowledge Center！这篇文章将帮助您快速了解我们的平台功能和使用方法。"
+}

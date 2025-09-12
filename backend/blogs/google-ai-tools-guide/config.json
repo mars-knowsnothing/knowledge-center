@@ -1,0 +1,15 @@
+{
+  "slug": "google-ai-tools-guide",
+  "title": "Google AI工具完全指南",
+  "description": "深入解析Google最新AI工具套件，包括Veo、Gemini 2.5、NotebookLM和Jules的功能特性和最佳实践。",
+  "author": "AI技术团队",
+  "publishDate": "2024-09-12",
+  "lastModified": "2024-09-12",
+  "tags": ["Google AI", "人工智能", "工具指南", "技术分析"],
+  "category": "技术深度",
+  "featured": true,
+  "draft": false,
+  "readingTime": "15分钟",
+  "coverImage": "google-ai-cover.jpg",
+  "excerpt": "Google AI工具生态系统的全面分析，助您了解最前沿的人工智能技术应用。"
+}

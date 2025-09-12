@@ -1,0 +1,15 @@
+{
+  "slug": "gen-ai-insights",
+  "title": "生成式AI应用领域深度调研报告",
+  "description": "面向资深IT顾问的战略分析与洞察，深入探讨GenAI在编程、科学发现、客户服务和内容创作领域的应用。",
+  "author": "AI研究团队",
+  "publishDate": "2024-09-12",
+  "lastModified": "2024-09-12",
+  "tags": ["生成式AI", "战略分析", "技术趋势", "企业应用"],
+  "category": "技术研究",
+  "featured": true,
+  "draft": false,
+  "readingTime": "25分钟",
+  "coverImage": "gen-ai-cover.jpg",
+  "excerpt": "一份全面的生成式AI调研报告，为IT咨询顾问提供战略洞察，涵盖四大核心应用领域的深度分析。"
+}

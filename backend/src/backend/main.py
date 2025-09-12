@@ -1,6 +1,7 @@
 from fastapi import FastAPI, HTTPException, File, UploadFile, Form
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
+from fastapi.responses import FileResponse
 from pydantic import BaseModel
 import os
 import json
@@ -12,6 +13,7 @@ import re
 import zipfile
 import tempfile
 import shutil
+from datetime import datetime
 from typing import List, Dict, Any, Optional
 from pathlib import Path
 
@@ -28,8 +30,14 @@ app.add_middleware(
 COURSES_DIR = Path("courses")
 COURSES_DIR.mkdir(exist_ok=True)
 
+BLOGS_DIR = Path("blogs")
+BLOGS_DIR.mkdir(exist_ok=True)
+
 TEMP_SLIDES_DIR = Path("temp_slides")
 TEMP_SLIDES_DIR.mkdir(exist_ok=True)
+
+TEMP_LABS_DIR = Path("temp_labs")
+TEMP_LABS_DIR.mkdir(exist_ok=True)
 
 # Mount static assets directories for courses
 @app.on_event("startup")
@@ -89,6 +97,14 @@ class TempSlideCreateRequest(BaseModel):
 class TempSlideUpdateRequest(BaseModel):
     content: str
 
+class TempLabCreateRequest(BaseModel):
+    originalFilename: str
+    content: str
+    courseId: str
+
+class TempLabUpdateRequest(BaseModel):
+    content: str
+
 class LabContent(BaseModel):
     course_name: str
     chapter: int
@@ -141,6 +157,38 @@ async def get_course_slides(course_id: str):
         "slides": slides,
         "html": html_content
     }
+
+@app.get("/api/courses/{course_id}/slides/{filename}")
+async def get_specific_slide_file_presentation(course_id: str, filename: str):
+    """Get specific slide file content formatted for presentation"""
+    course_path = COURSES_DIR / course_id
+    if not course_path.exists():
+        raise HTTPException(status_code=404, detail="Course not found")
+    
+    slide_file = course_path / "slides" / filename
+    if not slide_file.exists():
+        raise HTTPException(status_code=404, detail="Slide file not found")
+    
+    try:
+        async with aiofiles.open(slide_file, 'r', encoding='utf-8') as f:
+            content = await f.read()
+        
+        # Parse frontmatter and content
+        post = frontmatter.loads(content)
+        md = markdown.Markdown(extensions=['codehilite', 'fenced_code', 'tables'])
+        html_content = md.convert(post.content)
+        
+        # Parse slides from the specific file
+        slides = parse_slides(post.content, global_metadata=post.metadata)
+        
+        return {
+            "metadata": post.metadata,
+            "slides": slides,
+            "html": html_content
+        }
+        
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Error reading slide file: {str(e)}")
 
 @app.post("/api/courses")
 async def create_course(course: CourseCreate):
@@ -470,6 +518,130 @@ async def get_slide_file_content(course_name: str, filename: str):
         
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Error reading slide file: {str(e)}")
+
+# Blogs endpoints
+@app.get("/api/blogs")
+async def get_all_blogs():
+    """Get all blog posts"""
+    blogs = []
+    
+    if not BLOGS_DIR.exists():
+        return {"blogs": blogs}
+    
+    for blog_dir in BLOGS_DIR.iterdir():
+        if blog_dir.is_dir():
+            config_file = blog_dir / "config.json"
+            content_file = blog_dir / "content.md"
+            
+            if config_file.exists() and content_file.exists():
+                try:
+                    # Read config
+                    async with aiofiles.open(config_file, 'r', encoding='utf-8') as f:
+                        config_content = await f.read()
+                    config = json.loads(config_content)
+                    
+                    # Skip draft posts
+                    if config.get('draft', False):
+                        continue
+                    
+                    # Read content for excerpt if not provided
+                    if not config.get('excerpt'):
+                        async with aiofiles.open(content_file, 'r', encoding='utf-8') as f:
+                            content = await f.read()
+                        # Extract first paragraph as excerpt
+                        lines = content.split('\n')
+                        for line in lines:
+                            if line.strip() and not line.startswith('#'):
+                                config['excerpt'] = line.strip()[:200] + '...'
+                                break
+                    
+                    blogs.append(config)
+                    
+                except Exception as e:
+                    print(f"Error reading blog {blog_dir.name}: {e}")
+                    continue
+    
+    # Sort by publish date (newest first)
+    blogs.sort(key=lambda x: x.get('publishDate', ''), reverse=True)
+    
+    return {"blogs": blogs}
+
+@app.get("/api/blogs/{slug}")
+async def get_blog_post(slug: str):
+    """Get specific blog post content"""
+    blog_dir = BLOGS_DIR / slug
+    if not blog_dir.exists():
+        raise HTTPException(status_code=404, detail="Blog post not found")
+    
+    config_file = blog_dir / "config.json"
+    content_file = blog_dir / "content.md"
+    
+    if not config_file.exists() or not content_file.exists():
+        raise HTTPException(status_code=404, detail="Blog post files not found")
+    
+    try:
+        # Read config
+        async with aiofiles.open(config_file, 'r', encoding='utf-8') as f:
+            config_content = await f.read()
+        config = json.loads(config_content)
+        
+        # Check if draft
+        if config.get('draft', False):
+            raise HTTPException(status_code=404, detail="Blog post not found")
+        
+        # Read content
+        async with aiofiles.open(content_file, 'r', encoding='utf-8') as f:
+            content = await f.read()
+        
+        # Parse frontmatter and content
+        post = frontmatter.loads(content)
+        
+        # Configure markdown with enhanced extensions for better blog rendering
+        md = markdown.Markdown(extensions=[
+            'codehilite',
+            'fenced_code', 
+            'tables',
+            'toc',
+            'nl2br',        # Convert newlines to <br>
+            'sane_lists',   # Better list handling
+            'smarty',       # Smart quotes and dashes
+        ], extension_configs={
+            'codehilite': {
+                'css_class': 'highlight',
+                'use_pygments': True,
+                'noclasses': False,
+                'linenos': False
+            },
+            'toc': {
+                'permalink': True,
+                'permalink_class': 'header-link',
+                'permalink_title': '链接到此章节'
+            }
+        })
+        html_content = md.convert(post.content)
+        
+        return {
+            "config": config,
+            "content": content,
+            "html": html_content,
+            "metadata": post.metadata
+        }
+        
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Error reading blog post: {str(e)}")
+
+@app.get("/api/blogs/{slug}/assets/{filename}")
+async def get_blog_asset(slug: str, filename: str):
+    """Get blog post asset file"""
+    blog_dir = BLOGS_DIR / slug
+    if not blog_dir.exists():
+        raise HTTPException(status_code=404, detail="Blog post not found")
+    
+    asset_file = blog_dir / "assets" / filename
+    if not asset_file.exists():
+        raise HTTPException(status_code=404, detail="Asset file not found")
+    
+    return FileResponse(asset_file)
 
 # Labs endpoints
 @app.get("/api/labs/courses/{course_name}")
@@ -894,6 +1066,142 @@ async def commit_temp_slide_file(temp_id: str):
     
     # Ensure slides directory exists
     (course_path / "slides").mkdir(exist_ok=True)
+    
+    async with aiofiles.open(original_file_path, 'w', encoding='utf-8') as f:
+        await f.write(content)
+    
+    # Clean up temp files
+    temp_file_path.unlink()
+    metadata_file.unlink()
+    
+    return {"message": "Changes committed successfully"}
+
+# Lab temporary file management
+@app.post("/api/labs/temp")
+async def create_temp_lab_file(request: TempLabCreateRequest):
+    """Create a new temporary lab file for editing"""
+    temp_id = str(uuid.uuid4())
+    temp_filename = f"{request.originalFilename.split('.')[0]}-{temp_id}.md"
+    temp_file_path = TEMP_LABS_DIR / temp_filename
+    metadata_file = TEMP_LABS_DIR / f"{temp_id}.json"
+    
+    # Save the content to temp file
+    async with aiofiles.open(temp_file_path, 'w', encoding='utf-8') as f:
+        await f.write(request.content)
+    
+    # Save metadata
+    metadata = {
+        "id": temp_id,
+        "originalFilename": request.originalFilename,
+        "tempFilename": temp_filename,
+        "courseId": request.courseId,
+        "createdAt": datetime.now().isoformat()
+    }
+    
+    async with aiofiles.open(metadata_file, 'w', encoding='utf-8') as f:
+        await f.write(json.dumps(metadata, ensure_ascii=False, indent=2))
+    
+    return {
+        "id": temp_id,
+        "originalFilename": request.originalFilename,
+        "tempFilename": temp_filename,
+        "courseId": request.courseId,
+        "content": request.content
+    }
+
+@app.get("/api/labs/temp/{temp_id}")
+async def get_temp_lab_file(temp_id: str):
+    """Get temporary lab file content"""
+    metadata_file = TEMP_LABS_DIR / f"{temp_id}.json"
+    if not metadata_file.exists():
+        raise HTTPException(status_code=404, detail="Temporary lab file not found")
+    
+    # Read metadata
+    async with aiofiles.open(metadata_file, 'r', encoding='utf-8') as f:
+        metadata = json.loads(await f.read())
+    
+    # Read content
+    temp_file_path = TEMP_LABS_DIR / metadata["tempFilename"]
+    if not temp_file_path.exists():
+        raise HTTPException(status_code=404, detail="Temporary lab file content not found")
+    
+    async with aiofiles.open(temp_file_path, 'r', encoding='utf-8') as f:
+        content = await f.read()
+    
+    return {
+        "id": temp_id,
+        "originalFilename": metadata["originalFilename"],
+        "tempFilename": metadata["tempFilename"],
+        "courseId": metadata["courseId"],
+        "content": content,
+        "createdAt": metadata["createdAt"]
+    }
+
+@app.put("/api/labs/temp/{temp_id}")
+async def update_temp_lab_file(temp_id: str, request: TempLabUpdateRequest):
+    """Update temporary lab file content"""
+    metadata_file = TEMP_LABS_DIR / f"{temp_id}.json"
+    if not metadata_file.exists():
+        raise HTTPException(status_code=404, detail="Temporary lab file not found")
+    
+    # Read metadata
+    async with aiofiles.open(metadata_file, 'r', encoding='utf-8') as f:
+        metadata = json.loads(await f.read())
+    
+    # Update content
+    temp_file_path = TEMP_LABS_DIR / metadata["tempFilename"]
+    async with aiofiles.open(temp_file_path, 'w', encoding='utf-8') as f:
+        await f.write(request.content)
+    
+    return {"message": "Lab content updated successfully"}
+
+@app.delete("/api/labs/temp/{temp_id}")
+async def delete_temp_lab_file(temp_id: str):
+    """Delete temporary lab file"""
+    metadata_file = TEMP_LABS_DIR / f"{temp_id}.json"
+    if not metadata_file.exists():
+        raise HTTPException(status_code=404, detail="Temporary lab file not found")
+    
+    # Read metadata to get temp filename
+    async with aiofiles.open(metadata_file, 'r', encoding='utf-8') as f:
+        metadata = json.loads(await f.read())
+    
+    # Delete temp file and metadata
+    temp_file_path = TEMP_LABS_DIR / metadata["tempFilename"]
+    if temp_file_path.exists():
+        temp_file_path.unlink()
+    metadata_file.unlink()
+    
+    return {"message": "Temporary lab file deleted successfully"}
+
+@app.post("/api/labs/temp/{temp_id}/commit")
+async def commit_temp_lab_file(temp_id: str):
+    """Commit temporary lab file changes to original file"""
+    metadata_file = TEMP_LABS_DIR / f"{temp_id}.json"
+    if not metadata_file.exists():
+        raise HTTPException(status_code=404, detail="Temporary lab file not found")
+    
+    # Read metadata
+    async with aiofiles.open(metadata_file, 'r', encoding='utf-8') as f:
+        metadata = json.loads(await f.read())
+    
+    # Read temp file content
+    temp_file_path = TEMP_LABS_DIR / metadata["tempFilename"]
+    if not temp_file_path.exists():
+        raise HTTPException(status_code=404, detail="Temporary lab file content not found")
+    
+    async with aiofiles.open(temp_file_path, 'r', encoding='utf-8') as f:
+        content = await f.read()
+    
+    # Write to original file
+    course_path = COURSES_DIR / metadata["courseId"]
+    if not course_path.exists():
+        raise HTTPException(status_code=404, detail="Course not found")
+    
+    original_file_path = course_path / "labs" / metadata["originalFilename"]
+    
+    # Ensure labs directory exists
+    (course_path / "labs").mkdir(exist_ok=True)
     
     async with aiofiles.open(original_file_path, 'w', encoding='utf-8') as f:
         await f.write(content)
