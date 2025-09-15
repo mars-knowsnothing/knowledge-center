@@ -648,15 +648,15 @@ async def get_blog_asset(slug: str, filename: str):
 async def get_course_labs(course_name: str):
     """Get all lab files for a specific course"""
     labs = []
-    
+
     course_path = COURSES_DIR / course_name
     if not course_path.exists():
         raise HTTPException(status_code=404, detail="Course not found")
-    
+
     labs_dir = course_path / "labs"
     if not labs_dir.exists():
         return {"course_name": course_name, "labs": []}
-    
+
     # Look for lab files in the labs directory
     for lab_file in labs_dir.glob("lab-*.md"):
         try:
@@ -664,21 +664,25 @@ async def get_course_labs(course_name: str):
             chapter_match = re.search(r"lab-(\d+)\.md", lab_file.name)
             if not chapter_match:
                 continue
-                
+
             chapter = int(chapter_match.group(1))
-            
+
             async with aiofiles.open(lab_file, 'r', encoding='utf-8') as f:
                 content = await f.read()
-            
+
             # Parse frontmatter and content
             post = frontmatter.loads(content)
+
+            # Transform relative image URLs to absolute URLs
+            transformed_content = transform_image_urls_for_course(post.content, course_name)
+
             md = markdown.Markdown(extensions=['codehilite', 'fenced_code', 'tables', 'toc'])
-            html_content = md.convert(post.content)
-            
+            html_content = md.convert(transformed_content)
+
             # Extract title from content (first # heading)
             title_match = re.search(r'^#\s+(.+)$', post.content, re.MULTILINE)
             title = title_match.group(1) if title_match else f"Lab {chapter}"
-            
+
             lab_info = {
                 "course_name": course_name,
                 "chapter": chapter,
@@ -688,16 +692,16 @@ async def get_course_labs(course_name: str):
                 "metadata": post.metadata,
                 "filename": lab_file.name
             }
-            
+
             labs.append(lab_info)
-            
+
         except Exception as e:
             print(f"Error processing lab file {lab_file}: {e}")
             continue
-    
+
     # Sort by chapter number
     labs.sort(key=lambda x: x['chapter'])
-    
+
     return {"course_name": course_name, "labs": labs}
 
 @app.get("/api/labs/courses/{course_name}/chapter/{chapter_no}")
@@ -706,24 +710,28 @@ async def get_lab_content(course_name: str, chapter_no: int):
     course_path = COURSES_DIR / course_name
     if not course_path.exists():
         raise HTTPException(status_code=404, detail="Course not found")
-    
+
     lab_file = course_path / "labs" / f"lab-{chapter_no}.md"
     if not lab_file.exists():
         raise HTTPException(status_code=404, detail="Lab not found")
-    
+
     try:
         async with aiofiles.open(lab_file, 'r', encoding='utf-8') as f:
             content = await f.read()
-        
+
         # Parse frontmatter and content
         post = frontmatter.loads(content)
+
+        # Transform relative image URLs to absolute URLs
+        transformed_content = transform_image_urls_for_course(post.content, course_name)
+
         md = markdown.Markdown(extensions=['codehilite', 'fenced_code', 'tables', 'toc'])
-        html_content = md.convert(post.content)
-        
+        html_content = md.convert(transformed_content)
+
         # Extract title from content (first # heading)
         title_match = re.search(r'^#\s+(.+)$', post.content, re.MULTILINE)
         title = title_match.group(1) if title_match else f"Lab {chapter_no}"
-        
+
         return {
             "course_name": course_name,
             "chapter": chapter_no,
@@ -732,7 +740,7 @@ async def get_lab_content(course_name: str, chapter_no: int):
             "html": html_content,
             "metadata": post.metadata
         }
-        
+
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Error reading lab content: {str(e)}")
 
@@ -1247,10 +1255,14 @@ async def upload_course_lab(course_name: str, file: UploadFile = File(...)):
         # Parse the markdown file to get lab info
         async with aiofiles.open(file_path, 'r', encoding='utf-8') as f:
             md_content = await f.read()
-        
+
         post = frontmatter.loads(md_content)
+
+        # Transform relative image URLs to absolute URLs
+        transformed_content = transform_image_urls_for_course(post.content, course_name)
+
         md = markdown.Markdown(extensions=['codehilite', 'fenced_code', 'tables'])
-        html_content = md.convert(post.content)
+        html_content = md.convert(transformed_content)
         
         # Extract chapter number from filename or metadata
         chapter = post.metadata.get('chapter', 1)
@@ -1338,6 +1350,69 @@ async def upload_course_slides(course_name: str, file: UploadFile = File(...)):
         raise HTTPException(status_code=500, detail=f"Failed to upload slide file: {str(e)}")
 
 # Helper functions
+def transform_image_urls_for_course(content: str, course_name: str) -> str:
+    """Transform relative image URLs and links in markdown content to absolute URLs for course assets"""
+    import re
+
+    # Pattern to match markdown images: ![alt text](relative/path/to/image.ext)
+    def replace_image_url(match):
+        alt_text = match.group(1)
+        image_path = match.group(2)
+
+        # Check if this is a relative path pointing to assets
+        if image_path.startswith('../assets/'):
+            # Convert ../assets/image.png to /assets/{course_name}/image.png
+            asset_path = image_path.replace('../assets/', '')
+            absolute_url = f"http://localhost:8000/assets/{course_name}/{asset_path}"
+            return f"![{alt_text}]({absolute_url})"
+        elif image_path.startswith('./assets/'):
+            # Convert ./assets/image.png to /assets/{course_name}/image.png
+            asset_path = image_path.replace('./assets/', '')
+            absolute_url = f"http://localhost:8000/assets/{course_name}/{asset_path}"
+            return f"![{alt_text}]({absolute_url})"
+        elif image_path.startswith('assets/'):
+            # Convert assets/image.png to /assets/{course_name}/image.png
+            absolute_url = f"http://localhost:8000/assets/{course_name}/{image_path}"
+            return f"![{alt_text}]({absolute_url})"
+
+        # Return original if not a relative assets path
+        return match.group(0)
+
+    # Pattern to match markdown links: [link text](relative/path/to/file.ext)
+    def replace_link_url(match):
+        link_text = match.group(1)
+        link_path = match.group(2)
+
+        # Check if this is a relative path pointing to assets
+        if link_path.startswith('../assets/'):
+            # Convert ../assets/file.md to /assets/{course_name}/file.md
+            asset_path = link_path.replace('../assets/', '')
+            absolute_url = f"http://localhost:8000/assets/{course_name}/{asset_path}"
+            return f"[{link_text}]({absolute_url})"
+        elif link_path.startswith('./assets/'):
+            # Convert ./assets/file.md to /assets/{course_name}/file.md
+            asset_path = link_path.replace('./assets/', '')
+            absolute_url = f"http://localhost:8000/assets/{course_name}/{asset_path}"
+            return f"[{link_text}]({absolute_url})"
+        elif link_path.startswith('assets/'):
+            # Convert assets/file.md to /assets/{course_name}/file.md
+            absolute_url = f"http://localhost:8000/assets/{course_name}/{link_path}"
+            return f"[{link_text}]({absolute_url})"
+
+        # Return original if not a relative assets path
+        return match.group(0)
+
+    # Apply the transformations
+    # First transform images
+    image_pattern = r'!\[([^\]]*)\]\(([^)]+)\)'
+    transformed_content = re.sub(image_pattern, replace_image_url, content)
+
+    # Then transform links (but not images, so use negative lookbehind)
+    link_pattern = r'(?<!!)\[([^\]]*)\]\(([^)]+)\)'
+    transformed_content = re.sub(link_pattern, replace_link_url, transformed_content)
+
+    return transformed_content
+
 def generate_course_id(title: str) -> str:
     # Convert title to URL-friendly ID
     course_id = re.sub(r'[^a-zA-Z0-9\s\-]', '', title)
